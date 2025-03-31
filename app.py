@@ -13,6 +13,24 @@ import plotly.express as px
 import plotly.figure_factory as ff
 from datetime import datetime
 
+# Initialize all session state variables
+if 'user_logged_in' not in st.session_state:
+    st.session_state.user_logged_in = False
+if 'current_user' not in st.session_state:
+    st.session_state.current_user = None
+if 'account_creation_step' not in st.session_state:
+    st.session_state.account_creation_step = 1
+if 'is_admin' not in st.session_state:
+    st.session_state.is_admin = False
+if 'wines_displayed' not in st.session_state:
+    st.session_state.wines_displayed = 10
+if 'cart' not in st.session_state:
+    st.session_state.cart = []
+if 'cart_total' not in st.session_state:
+    st.session_state.cart_total = 0.0
+if 'orders' not in st.session_state:
+    st.session_state.orders = []
+
 # User data functions
 def load_user_data():
     try:
@@ -121,32 +139,6 @@ def create_admin_account(username, password):
     credentials[username] = hash_password(password)
     save_admin_credentials(credentials)
     return True, "Admin account created successfully"
-
-# Initialize session state
-if 'is_admin' not in st.session_state:
-    st.session_state.is_admin = False
-if 'wines_displayed' not in st.session_state:
-    st.session_state.wines_displayed = 10
-if 'cart' not in st.session_state:
-    st.session_state.cart = []
-if 'cart_total' not in st.session_state:
-    st.session_state.cart_total = 0.0
-
-# Initialize session state for orders
-if 'orders' not in st.session_state:
-    st.session_state.orders = []
-
-# Instantiate the list of wine traits
-all_traits = ['almond', 'anise', 'apple', 'apricot', 'baked', 'baking_spices', 'berry', 'black_cherry', 'black_currant', 'black_pepper', 'black_tea', 'blackberry', 'blueberry', 
-              'boysenberry', 'bramble', 'bright', 'butter', 'candy', 'caramel', 'cardamom', 'cassis', 'cedar', 'chalk', 'cherry', 'chocolate', 'cinnamon', 'citrus', 'clean', 'closed',
-              'clove', 'cocoa', 'coffee', 'cola', 'complex', 'concentrated', 'cranberry', 'cream', 'crisp', 'dark', 'dark_chocolate', 'dense', 'depth', 'dried_herb', 'dry', 'dust',
-              'earth', 'edgy', 'elderberry', 'elegant', 'fennel', 'firm', 'flower', 'forest_floor', 'french_oak', 'fresh', 'fruit', 'full_bodied', 'game', 'grapefruit', 'graphite',
-              'green', 'gripping', 'grippy', 'hearty', 'herb', 'honey', 'honeysuckle', 'jam', 'juicy', 'lavender', 'leafy', 'lean', 'leather', 'lemon', 'lemon_peel', 'length', 'licorice',
-              'light_bodied', 'lime', 'lush', 'meaty', 'medium_bodied', 'melon', 'milk_chocolate', 'minerality', 'mint', 'nutmeg', 'oak', 'olive', 'orange', 'orange_peel', 'peach',
-              'pear', 'pencil_lead', 'pepper', 'pine', 'pineapple', 'plum', 'plush', 'polished', 'pomegranate', 'powerful', 'purple', 'purple_flower', 'raspberry', 'refreshing',
-              'restrained', 'rich', 'ripe', 'robust', 'rose', 'round', 'sage', 'salt', 'savory', 'sharp', 'silky', 'smoke', 'smoked_meat', 'smooth', 'soft', 'sparkling', 'spice',
-              'steel', 'stone', 'strawberry', 'succulent', 'supple', 'sweet', 'tangy', 'tannin', 'tar', 'tart', 'tea', 'thick', 'thyme', 'tight', 'toast', 'tobacco', 'tropical_fruit',
-              'vanilla', 'velvety', 'vibrant', 'violet', 'warm', 'weight', 'wet_rocks', 'white', 'white_pepper', 'wood']
 
 # Add custom theme and styling at the beginning of the app
 def set_custom_theme():
