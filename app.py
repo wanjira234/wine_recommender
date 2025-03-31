@@ -12,6 +12,17 @@ import json
 import plotly.express as px
 import plotly.figure_factory as ff
 
+def get_wine_icon(variety):
+    variety = variety.lower()
+    if 'sparkling' in variety:
+        return '<i class="fa-solid fa-champagne-glasses"></i>'
+    elif 'rosé' in variety or 'rose' in variety:
+        return '<i class="fa-solid fa-wine-glass-empty"></i>'
+    elif 'red' in variety or 'blend' in variety:
+        return '<i class="fa-solid fa-wine-glass"></i>'
+    else:
+        return '<i class="fa-solid fa-wine-bottle"></i>'
+
 # Import wine dataframes
 df_wine_model = pd.read_pickle('data/df_wine_us_rate.pkl')
 df_wine_combi = pd.read_pickle('data/df_wine_combi.pkl')
@@ -20,7 +31,7 @@ df_wine_combi = pd.read_pickle('data/df_wine_combi.pkl')
 wine_images = {
     'red': 'images/red-wine.jpg',
     'white': 'images/white-wine.jpg',
-    'rose': 'images/rose-wine.jpg',
+    'rose': 'images/rose2-wine.jpg',
     'sparkling': 'images/sparkling-wine.jpg'
 }
 
@@ -59,6 +70,10 @@ if 'is_admin' not in st.session_state:
     st.session_state.is_admin = False
 if 'wines_displayed' not in st.session_state:
     st.session_state.wines_displayed = 10
+if 'cart' not in st.session_state:
+    st.session_state.cart = []
+if 'cart_total' not in st.session_state:
+    st.session_state.cart_total = 0.0
 
 # Instantiate the list of wine traits
 all_traits = ['almond', 'anise', 'apple', 'apricot', 'baked', 'baking_spices', 'berry', 'black_cherry', 'black_currant', 'black_pepper', 'black_tea', 'blackberry', 'blueberry', 
@@ -285,7 +300,7 @@ def set_custom_theme():
         /* Wine Cards */
         .wine-card {
             background-color: white;
-            border-radius: 16px;
+            border-radius: 12px;
             overflow: hidden;
             margin: 0.5rem;
             transition: all 0.3s ease;
@@ -295,589 +310,32 @@ def set_custom_theme():
             flex-direction: column;
             position: relative;
             cursor: pointer;
-            width: 100%;
-            min-width: 400px;
-            max-width: 600px;
+            width: calc(100% - 1rem);  /* Reduced margin */
+            min-width: 250px;  /* Smaller minimum width */
+            max-width: 400px;  /* Smaller maximum width */
+            margin: 0.5rem auto;  /* Reduced margin */
         }
 
-        .wine-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
-        }
-
+        /* Optimize image loading */
         .wine-image-container {
             position: relative;
             width: 100%;
-            height: 400px;
+            padding-bottom: 0;
+            height: 200px;
             overflow: hidden;
-            background-color: #f8f9fa;
+            background-color: var(--secondary-bg);
         }
 
         .wine-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-            display: block;
-        }
-
-        .wine-card:hover img {
-            transform: scale(1.05);
-        }
-
-        /* Remove overlay and view details button */
-        .wine-overlay {
-            display: none;
-        }
-
-        .wine-card-content {
-            padding: 2rem;
-            background: white;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            width: 100%;
-        }
-
-        .wine-title {
-            color: #2C1810;
-            font-size: 1.2rem;
-            font-weight: 600;
-            font-family: 'Playfair Display', serif;
-            line-height: 1.4;
-            margin: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-        }
-
-        .wine-price {
-            color: #B4A169;
-            font-size: 1.4rem;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .wine-details {
-            color: #495057;
-            font-size: 1rem;
-            line-height: 1.4;
-            margin: 0;
-        }
-
-        /* Adjust the grid layout for better spacing */
-        .stMarkdown {
-            width: 100%;
-        }
-
-        [data-testid="stHorizontalBlock"] {
-            gap: 2rem;
-            padding: 0 1rem;
-        }
-
-        /* Wine Details Page */
-        .wine-traits-detail {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .wine-traits-detail .wine-trait {
-            background-color: #F8F9FA;
-            color: #2C1810;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            border: 1px solid #E9ECEF;
-        }
-
-        .add-to-cart-btn {
-            background-color: #B4A169;
-            color: white;
-            border: none;
-            padding: 16px 32px;
-            border-radius: 30px;
-            font-family: 'Playfair Display', serif;
-            font-size: 1.1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 2rem;
-            width: 100%;
-        }
-
-        .add-to-cart-btn:hover {
-            background-color: #2C1810;
-            transform: translateY(-2px);
-        }
-
-        /* Load More Button */
-        [data-testid="stButton"] button {
-            background-color: transparent;
-            color: #2C1810;
-            border: 2px solid #2C1810;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-family: 'Playfair Display', serif;
-            font-size: 1rem;
-            margin-top: 2rem;
-            transition: all 0.3s ease;
-        }
-
-        [data-testid="stButton"] button:hover {
-            background-color: #2C1810;
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        /* Grid Layout */
-        [data-testid="column"] {
-            padding: 1rem;
-            min-width: 350px;
-        }
-
-        /* Masonry-like grid */
-        .wine-grid {
-            column-count: 3;
-            column-gap: 1rem;
-            padding: 1rem;
-        }
-
-        .wine-card-wrapper {
-            break-inside: avoid;
-            margin-bottom: 1rem;
-        }
-
-        /* Metrics */
-        [data-testid="stMetricValue"] {
-            color: var(--accent-burgundy);
-            font-size: 2rem;
-            font-weight: 600;
-            font-family: 'Playfair Display', serif;
-        }
-
-        [data-testid="stMetricLabel"] {
-            color: var(--text-gray);
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* Sidebar */
-        [data-testid="stSidebar"] {
-            background-color: var(--secondary-bg);
-            border-right: 1px solid var(--border-light);
-        }
-
-        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
-            color: var(--text-dark);
-        }
-
-        /* Success/Error messages */
-        .stSuccess {
-            background-color: #e6f4ea;
-            color: #1e4620;
-            border: 1px solid #b7dfb9;
-            padding: 0.75rem 1rem;
-            border-radius: 4px;
-        }
-
-        .stError {
-            background-color: #fce8e8;
-            color: #c62828;
-            border: 1px solid #f5c2c2;
-            padding: 0.75rem 1rem;
-            border-radius: 4px;
-        }
-
-        /* Remove background image */
-        [data-testid="stAppViewContainer"] {
-            background-image: none !important;
-        }
-
-        [data-testid="stVerticalBlock"] {
-            background-color: transparent !important;
-        }
-
-        /* Wine Catalog Container */
-        .wine-catalog-container {
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* View Details Button */
-        .view-details-btn {
-            background-color: white;
-            color: #2C1810;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-family: 'Playfair Display', serif;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .view-details-btn:hover {
-            transform: scale(1.05);
-            background-color: #B4A169;
-            color: white;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 1200px) {
-            .wine-catalog-container {
-# Import python lib
-import streamlit as st
-import time
-import pandas as pd
-import numpy as np
-from surprise import Dataset, Reader
-from surprise import KNNBaseline
-from PIL import Image
-import os
-import hashlib
-import json
-import plotly.express as px
-import plotly.figure_factory as ff
-
-# Import wine dataframes
-df_wine_model = pd.read_pickle('data/df_wine_us_rate.pkl')
-df_wine_combi = pd.read_pickle('data/df_wine_combi.pkl')
-
-# Load wine images
-wine_images = {
-    'red': 'images/red-wine.jpg',
-    'white': 'images/white-wine.jpg',
-    'rose': 'images/rose-wine.jpg',
-    'sparkling': 'images/sparkling-wine.jpg'
-}
-
-# Admin credentials file
-ADMIN_FILE = 'admin_credentials.json'
-
-def load_admin_credentials():
-    if os.path.exists(ADMIN_FILE):
-        with open(ADMIN_FILE, 'r') as f:
-            return json.load(f)
-    return {}
-
-def save_admin_credentials(credentials):
-    with open(ADMIN_FILE, 'w') as f:
-        json.dump(credentials, f)
-
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-def check_login(username, password):
-    credentials = load_admin_credentials()
-    hashed_password = hash_password(password)
-    return username in credentials and credentials[username] == hashed_password
-
-def create_admin_account(username, password):
-    credentials = load_admin_credentials()
-    if username in credentials:
-        return False, "Username already exists"
-    
-    credentials[username] = hash_password(password)
-    save_admin_credentials(credentials)
-    return True, "Admin account created successfully"
-
-# Initialize session state
-if 'is_admin' not in st.session_state:
-    st.session_state.is_admin = False
-if 'wines_displayed' not in st.session_state:
-    st.session_state.wines_displayed = 10
-
-# Instantiate the list of wine traits
-all_traits = ['almond', 'anise', 'apple', 'apricot', 'baked', 'baking_spices', 'berry', 'black_cherry', 'black_currant', 'black_pepper', 'black_tea', 'blackberry', 'blueberry', 
-              'boysenberry', 'bramble', 'bright', 'butter', 'candy', 'caramel', 'cardamom', 'cassis', 'cedar', 'chalk', 'cherry', 'chocolate', 'cinnamon', 'citrus', 'clean', 'closed',
-              'clove', 'cocoa', 'coffee', 'cola', 'complex', 'concentrated', 'cranberry', 'cream', 'crisp', 'dark', 'dark_chocolate', 'dense', 'depth', 'dried_herb', 'dry', 'dust',
-              'earth', 'edgy', 'elderberry', 'elegant', 'fennel', 'firm', 'flower', 'forest_floor', 'french_oak', 'fresh', 'fruit', 'full_bodied', 'game', 'grapefruit', 'graphite',
-              'green', 'gripping', 'grippy', 'hearty', 'herb', 'honey', 'honeysuckle', 'jam', 'juicy', 'lavender', 'leafy', 'lean', 'leather', 'lemon', 'lemon_peel', 'length', 'licorice',
-              'light_bodied', 'lime', 'lush', 'meaty', 'medium_bodied', 'melon', 'milk_chocolate', 'minerality', 'mint', 'nutmeg', 'oak', 'olive', 'orange', 'orange_peel', 'peach',
-              'pear', 'pencil_lead', 'pepper', 'pine', 'pineapple', 'plum', 'plush', 'polished', 'pomegranate', 'powerful', 'purple', 'purple_flower', 'raspberry', 'refreshing',
-              'restrained', 'rich', 'ripe', 'robust', 'rose', 'round', 'sage', 'salt', 'savory', 'sharp', 'silky', 'smoke', 'smoked_meat', 'smooth', 'soft', 'sparkling', 'spice',
-              'steel', 'stone', 'strawberry', 'succulent', 'supple', 'sweet', 'tangy', 'tannin', 'tar', 'tart', 'tea', 'thick', 'thyme', 'tight', 'toast', 'tobacco', 'tropical_fruit',
-              'vanilla', 'velvety', 'vibrant', 'violet', 'warm', 'weight', 'wet_rocks', 'white', 'white_pepper', 'wood']
-
-# Add custom theme and styling at the beginning of the app
-def set_custom_theme():
-    st.markdown("""
-        <style>
-        /* Theme Variables */
-        :root {
-            --primary-bg: #ffffff;
-            --secondary-bg: #f8f9fa;
-            --accent-burgundy: #722F37;
-            --accent-gold: #B4A169;
-            --text-dark: #2C1810;
-            --text-gray: #495057;
-            --border-light: #dee2e6;
-        }
-
-        /* Form Labels and Text */
-        .stTextInput label, 
-        .stNumberInput label, 
-        .stTextArea label, 
-        .stSelectbox label,
-        .stDateInput label,
-        div[data-baseweb="select"] label {
-            color: var(--text-dark) !important;
-            font-family: 'Playfair Display', serif;
-            font-size: 1rem;
-            font-weight: 500;
-        }
-
-        /* Input field text */
-        .stTextInput input,
-        .stNumberInput input,
-        .stTextArea textarea,
-        .stSelectbox select,
-        .stDateInput input {
-            color: var(--text-dark) !important;
-            background-color: white !important;
-            border: 1px solid var(--border-light);
-            border-radius: 4px;
-            padding: 0.75rem;
-            font-family: 'Playfair Display', serif;
-        }
-
-        /* Expander styling */
-        .streamlit-expanderHeader {
-            color: var(--text-dark) !important;
-            background-color: var(--secondary-bg);
-            border: 1px solid var(--border-light);
-        }
-
-        /* Data editor styling */
-        .stDataFrame {
-            color: var(--text-dark);
-        }
-
-        .stDataFrame td {
-            color: var(--text-dark) !important;
-        }
-
-        .stDataFrame th {
-            color: white !important;
-            background-color: var(--accent-burgundy) !important;
-        }
-
-        /* Radio buttons */
-        .stRadio label {
-            color: var(--text-dark) !important;
-        }
-
-        /* Markdown text */
-        .stMarkdown {
-            color: var(--text-dark) !important;
-        }
-
-        /* Headers */
-        h1, h2, h3, h4, h5, h6 {
-            color: var(--text-dark) !important;
-        }
-
-        .stMarkdown p {
-            color: var(--text-dark) !important;
-        }
-
-        /* Selectbox text */
-        div[data-baseweb="select"] span {
-            color: var(--text-dark) !important;
-        }
-
-        /* Dropdown options */
-        div[role="listbox"] div[role="option"] {
-            color: var(--text-dark) !important;
-        }
-
-        /* Global Styles */
-        .stApp {
-            background-color: var(--primary-bg);
-            color: var(--text-dark);
-            font-family: 'Playfair Display', serif;
-        }
-
-        /* Tabs styling */
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 8px;
-            background-color: var(--secondary-bg);
-            padding: 0.5rem;
-            border-radius: 4px;
-            border-bottom: 2px solid var(--accent-burgundy);
-        }
-
-        .stTabs [data-baseweb="tab"] {
-            background-color: transparent;
-            color: var(--text-gray);
-            border: none;
-            padding: 0.5rem 1rem;
-            font-family: 'Playfair Display', serif;
-            font-size: 1rem;
-        }
-
-        .stTabs [data-baseweb="tab"][aria-selected="true"] {
-            background-color: var(--accent-burgundy);
-            color: white;
-            border-radius: 4px;
-        }
-
-        /* Links */
-        a {
-            color: var(--accent-burgundy);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        a:hover {
-            color: var(--accent-gold);
-        }
-
-        /* Buttons */
-        .stButton button {
-            background-color: var(--accent-burgundy);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 0.75rem 1.5rem;
-            font-family: 'Playfair Display', serif;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .stButton button:hover {
-            background-color: var(--accent-gold);
-            transform: translateY(-2px);
-        }
-
-        /* Input fields */
-        .stTextInput input:focus,
-        .stNumberInput input:focus,
-        .stTextArea textarea:focus {
-            border-color: var(--accent-burgundy);
-            box-shadow: 0 0 0 2px rgba(114, 47, 55, 0.1);
-        }
-
-        /* Multiselect */
-        div[data-baseweb="select"] {
-            background-color: white;
-            border-radius: 4px;
-        }
-
-        div[data-baseweb="select"] > div {
-            background-color: white;
-            border: 1px solid var(--border-light);
-            color: var(--text-dark);
-        }
-
-        div[role="listbox"] {
-            background-color: white;
-            border: 1px solid var(--border-light);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        div[role="option"] {
-            color: var(--text-dark);
-            padding: 0.5rem 1rem;
-        }
-
-        div[role="option"]:hover {
-            background-color: var(--secondary-bg);
-            color: var(--accent-burgundy);
-        }
-
-        /* Tables */
-        .dataframe {
-            background-color: white;
-            border: 1px solid var(--border-light);
-            border-radius: 4px;
-        }
-
-        .dataframe th {
-            background-color: var(--accent-burgundy);
-            color: white;
-            padding: 0.75rem 1rem;
-            font-family: 'Playfair Display', serif;
-        }
-
-        .dataframe td {
-            color: var(--text-dark);
-            border-top: 1px solid var(--border-light);
-            padding: 0.75rem 1rem;
-        }
-
-        /* Wine Cards */
-        .wine-card {
-            background-color: white;
-            border-radius: 16px;
-            overflow: hidden;
-            margin: 0.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            cursor: pointer;
-            width: 100%;
-            min-width: 300px;
-        }
-
-        .wine-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
-        }
-
-        .wine-image-container {
-            position: relative;
-            width: 100%;
-            height: 300px;
-            overflow: hidden;
-            background-color: #f8f9fa;
-        }
-
-        .wine-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-            display: block;
-        }
-
-        .wine-card:hover img {
-            transform: scale(1.05);
-        }
-
-        .wine-overlay {
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(44, 24, 16, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .wine-card:hover .wine-overlay {
-            opacity: 1;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;  /* Optimize performance */
         }
 
         .wine-card-content {
@@ -892,7 +350,7 @@ def set_custom_theme():
 
         .wine-title {
             color: #2C1810;
-            font-size: 1.2rem;
+            font-size: 1rem;  /* Smaller font */
             font-weight: 600;
             font-family: 'Playfair Display', serif;
             line-height: 1.4;
@@ -902,20 +360,23 @@ def set_custom_theme():
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
+            min-height: 2.4em;  /* Reduced minimum height */
         }
 
         .wine-price {
             color: #B4A169;
-            font-size: 1.4rem;
+            font-size: 1.1rem;  /* Smaller font */
             font-weight: 600;
             margin: 0;
+            margin-bottom: 0.25rem;  /* Reduced margin */
         }
 
         .wine-details {
             color: #495057;
-            font-size: 1rem;
+            font-size: 0.9rem;  /* Smaller font */
             line-height: 1.4;
             margin: 0;
+            margin-bottom: 0.25rem;  /* Reduced margin */
         }
 
         /* Adjust the grid layout for better spacing */
@@ -1031,19 +492,65 @@ def set_custom_theme():
 
         /* Success/Error messages */
         .stSuccess {
-            background-color: #e6f4ea;
-            color: #1e4620;
-            border: 1px solid #b7dfb9;
-            padding: 0.75rem 1rem;
-            border-radius: 4px;
+            background-color: var(--accent-burgundy) !important;
+            color: white !important;
+            border: 1px solid #5a252c !important;
+            padding: 0.75rem 1rem !important;
+            border-radius: 4px !important;
+            font-family: 'Playfair Display', serif !important;
+            font-size: 1rem !important;
+            font-weight: 500 !important;
+        }
+
+        /* Target all elements inside success message with high specificity */
+        .stSuccess > div {
+            color: white !important;
+        }
+        
+        .stSuccess > div > div {
+            color: white !important;
+        }
+        
+        .stSuccess > div > div > div {
+            color: white !important;
+        }
+        
+        .stSuccess > div > div > div > div {
+            color: white !important;
+        }
+        
+        .stSuccess [data-testid="stMarkdownContainer"] {
+            color: white !important;
+        }
+        
+        .stSuccess [data-testid="stMarkdownContainer"] p {
+            color: white !important;
+        }
+
+        .stWarning {
+            background-color: #FFF3E0 !important;
+            color: #884A00 !important;
+            border: 1px solid #FFB74D !important;
+            padding: 0.75rem 1rem !important;
+            border-radius: 4px !important;
+            font-family: 'Playfair Display', serif !important;
+            font-size: 1rem !important;
         }
 
         .stError {
-            background-color: #fce8e8;
-            color: #c62828;
-            border: 1px solid #f5c2c2;
-            padding: 0.75rem 1rem;
-            border-radius: 4px;
+            background-color: #FCE8E8 !important;
+            color: #C62828 !important;
+            border: 1px solid #F5C2C2 !important;
+            padding: 0.75rem 1rem !important;
+            border-radius: 4px !important;
+            font-family: 'Playfair Display', serif !important;
+            font-size: 1rem !important;
+        }
+
+        /* Make sure message text is visible */
+        .stWarning div, .stError div {
+            color: inherit !important;
+            font-weight: 500 !important;
         }
 
         /* Remove background image */
@@ -1057,59 +564,254 @@ def set_custom_theme():
 
         /* Wine Catalog Container */
         .wine-catalog-container {
-            padding: 1rem;
-            max-width: 1400px;
+            width: 100%;
+            max-width: 1200px;  /* Reduced max width */
             margin: 0 auto;
+            padding: 1rem;  /* Reduced padding */
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));  /* Smaller minimum column width */
+            gap: 1rem;  /* Reduced gap */
         }
 
-        /* View Details Button */
-        .view-details-btn {
-            background-color: white;
-            color: #2C1810;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-family: 'Playfair Display', serif;
-            font-size: 1rem;
-            cursor: pointer;
+        .wine-item {
+            background: white;
+            border-radius: 8px;  /* Smaller border radius */
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);  /* Lighter shadow */
+            transition: transform 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .wine-image {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background-color: var(--secondary-bg);
+            overflow: hidden;
+        }
+
+        .wine-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .wine-image img.hidden {
+            display: none;
+        }
+
+        .wine-icon-fallback {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--secondary-bg);
+            color: var(--accent-burgundy);
+            font-size: 4rem;
             transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
-        .view-details-btn:hover {
+        .wine-icon-fallback.show {
+            display: flex;
+        }
+
+        .wine-icon-fallback:hover {
+            color: var(--accent-gold);
+        }
+
+        .wine-item:hover {
+            transform: translateY(-4px);
+        }
+
+        .wine-item:hover .wine-image img {
             transform: scale(1.05);
-            background-color: #B4A169;
-            color: white;
         }
 
-        /* Responsive adjustments */
+        .wine-content {
+            padding: 1rem;  /* Reduced padding */
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;  /* Reduced gap */
+        }
+
+        .wine-rating {
+            padding: 0.25rem 0.75rem;  /* Reduced padding */
+            font-size: 0.8rem;  /* Smaller font */
+        }
+
         @media (max-width: 1200px) {
             .wine-catalog-container {
-                max-width: 1000px;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));  /* Even smaller on medium screens */
+                padding: 1rem;
+                gap: 1rem;
             }
         }
 
         @media (max-width: 768px) {
-            .wine-card {
-                min-width: 280px;
+            .wine-catalog-container {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));  /* Smallest on mobile */
+                padding: 0.75rem;
+                gap: 0.75rem;
             }
             
-            .wine-image-container {
-                height: 250px;
+            .wine-content {
+                padding: 0.75rem;
             }
-            
-            .wine-title {
-                font-size: 1.1rem;
-            }
-            
-            .wine-price {
-                font-size: 1.2rem;
-            }
+        }
+
+        /* Performance optimizations */
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Reduce layout shifts */
+        .wine-title {
+            min-height: 3em;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Optimize button rendering */
+        .stButton button {
+            backface-visibility: hidden;
+            transform: translateZ(0);
+            -webkit-font-smoothing: subpixel-antialiased;
+        }
+
+        /* Shopping Cart Styles */
+        .stMarkdown {
+            color: var(--text-dark) !important;
+        }
+
+        .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+            color: var(--text-dark) !important;
+        }
+
+        /* Form text color */
+        .stTextInput label, 
+        .stNumberInput label, 
+        .stTextArea label, 
+        .stSelectbox label,
+        .stDateInput label {
+            color: var(--text-dark) !important;
+        }
+
+        /* Input field text */
+        .stTextInput input,
+        .stNumberInput input,
+        .stTextArea textarea,
+        .stSelectbox select,
+        .stDateInput input {
+            color: var(--text-dark) !important;
+        }
+
+        /* Cart item text */
+        [data-testid="stVerticalBlock"] {
+            color: var(--text-dark) !important;
+        }
+
+        [data-testid="stVerticalBlock"] p {
+            color: var(--text-dark) !important;
+        }
+
+        /* Success message text */
+        .stSuccess {
+            background-color: var(--accent-burgundy) !important;
+            color: white !important;
+        }
+
+        .stSuccess > div {
+            color: white !important;
+        }
+
+        /* Info message text */
+        .stInfo {
+            color: var(--text-dark) !important;
+            background-color: var(--secondary-bg) !important;
+        }
+
+        .stInfo > div {
+            color: var(--text-dark) !important;
+        }
+
+        /* Error message text */
+        .stError {
+            color: #C62828 !important;
+        }
+
+        .stError > div {
+            color: #C62828 !important;
+        }
+
+        /* Form field text */
+        .stForm label {
+            color: var(--text-dark) !important;
+        }
+
+        .stForm [data-baseweb="input"] {
+            color: var(--text-dark) !important;
+        }
+
+        /* Total price text */
+        [data-testid="stHeader"] {
+            color: var(--text-dark) !important;
+        }
+
+        /* Cart item details */
+        .wine-details-cart {
+            color: var(--text-dark) !important;
+            font-family: 'Playfair Display', serif !important;
+        }
+
+        .wine-price-cart {
+            color: var(--accent-gold) !important;
+            font-weight: 600 !important;
+        }
+
+        /* Button text */
+        .stButton button {
+            color: white !important;
+        }
+
+        /* Wine Icon Placeholders */
+        .wine-icon-placeholder {
+            width: 100%;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--secondary-bg);
+            color: var(--accent-burgundy);
+            font-size: 4rem;
+            transition: all 0.3s ease;
+        }
+
+        .wine-icon-placeholder:hover {
+            color: var(--accent-gold);
+            transform: scale(1.05);
         }
         </style>
 
+        <script>
+        function handleImageError(img) {
+            img.classList.add('hidden');
+            img.nextElementSibling.classList.add('show');
+        }
+        </script>
+
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     """, unsafe_allow_html=True)
 
 # Call the theme function at the start
@@ -1197,10 +899,264 @@ def create_plotly_chart(df, x, title, xlabel, ylabel="Number of Wines", nbins=50
     return fig
 
 # Create tabs for different sections
-tab1, tab2, tab3 = st.tabs(["Wine Recommender", "Wine Catalog", "Admin Dashboard"])
+tab1, tab2, tab3, tab4 = st.tabs(["Wine Recommender", "Wine Catalog", "Shopping Cart", "Admin Dashboard"])
 
 # Admin Login Section
 with tab3:
+    st.title("Shopping Cart")
+    
+    if not st.session_state.cart:
+        st.info("Your cart is empty. Browse our Wine Catalog to add some wines!")
+    else:
+        # Display cart items
+        st.subheader("Cart Items")
+        for idx, item in enumerate(st.session_state.cart):
+            col1, col2, col3 = st.columns([3, 1, 1])
+            with col1:
+                st.markdown(f'<div class="wine-details-cart"><strong>{item["title"]}</strong><br/><em>{item["variety"]}</em> - {item["winery"]}</div>', unsafe_allow_html=True)
+            with col2:
+                st.markdown(f'<div class="wine-price-cart">${item["price"]:.2f}</div>', unsafe_allow_html=True)
+            with col3:
+                if st.button("Remove", key=f"remove_{idx}"):
+                    st.session_state.cart_total -= item['price']
+                    st.session_state.cart.pop(idx)
+                    st.rerun()
+        
+        # Display total and checkout form
+        st.markdown("---")
+        st.markdown(f"### Total: ${st.session_state.cart_total:.2f}")
+        
+        # Checkout Form
+        with st.form("checkout_form"):
+            st.subheader("Checkout Information")
+            col1, col2 = st.columns(2)
+            with col1:
+                first_name = st.text_input("First Name")
+                email = st.text_input("Email")
+                address = st.text_area("Shipping Address")
+            with col2:
+                last_name = st.text_input("Last Name")
+                phone = st.text_input("Phone Number")
+                
+            # Payment Information
+            st.subheader("Payment Information")
+            col3, col4 = st.columns(2)
+            with col3:
+                card_number = st.text_input("Card Number")
+                card_name = st.text_input("Name on Card")
+            with col4:
+                expiry = st.text_input("Expiry Date (MM/YY)")
+                cvv = st.text_input("CVV", type="password")
+                
+            submit_order = st.form_submit_button("Place Order")
+            
+            if submit_order:
+                if all([first_name, last_name, email, phone, address, card_number, card_name, expiry, cvv]):
+                    st.success("Order placed successfully! You will receive a confirmation email shortly.")
+                    st.session_state.cart = []
+                    st.session_state.cart_total = 0.0
+                    st.rerun()
+                else:
+                    st.error("Please fill in all required fields.")
+
+with tab1:
+    st.title("Which wine should I get?")
+    st.write("By Lee Wan Xian")
+    st.write("[GitHub](https://github.com/leewanxian) | [LinkedIn](https://www.linkedin.com/in/wanxianlee)")
+    st.write("You can type the wine traits that you want in the dropdown list below")
+    add_bg_from_url()
+
+    select_temptrait = st.multiselect(label = " ", options = all_traits, label_visibility = "collapsed")
+
+    if st.button('Show me the wines!'):
+        with st.spinner('Should you have some wine now?'):
+            
+            time.sleep(2)
+            # Instantiate selected wine traits
+            if len(select_temptrait) == 0:
+                selected_traits = all_traits
+            else:
+                selected_traits = select_temptrait
+
+            # Run recommender model
+            recommend_df = recommend_scores()
+        
+            # Instantiate traits filter
+            trait_filter = ['title']
+
+            # Add on any traits selected by user
+            trait_filter.extend(selected_traits)
+
+            # Create dataframe for wine name and traits
+            df_temp_traits = df_wine_combi.drop(columns=['taster_name', 'points', 'variety', 'designation', 'winery', 'country', 'province', 'region_1', 'region_2', 'price', 'description',
+                                                         'desc_wd_count', 'traits'])
+
+            # Code to start filtering out wines with either one of the selected traits
+            df_temp_traits = df_temp_traits[trait_filter]
+            df_temp_traits['sum'] = df_temp_traits.sum(axis=1, numeric_only=True)
+            df_temp_traits = df_temp_traits[df_temp_traits['sum'] != 0]
+
+            # Merge the selected wines traits with recommend scores
+            df_selectrec_temp = df_temp_traits.merge(recommend_df, on='title', how='left')
+
+            # Merge the selected wines with recommendations with df on details
+            df_selectrec_detail = df_selectrec_temp.merge(df_wine_combi, on='title', how='left')
+            df_selectrec_detail.drop_duplicates(inplace=True)
+
+            # Pull out the top 10 recommendations (raw)
+            df_rec_raw = df_selectrec_detail.sort_values('est_match_pts', ascending=False).head(10)
+            
+            # Prepare the display for the top 10 recommendations
+            df_rec_final = df_rec_raw[['title', 'points', 'price', 'variety', 'country', 'province', 'winery', 'description', 'traits']].reset_index(drop=True)
+            df_rec_final.index = df_rec_final.index + 1
+            df_rec_final['traits']=df_rec_final['traits'].str.replace(" ", " | ")
+            df_rec_final.rename(columns={'title':'Name',
+                                         'country':'Country',
+                                         'province':'State/Province',
+                                         'variety':'Type',
+                                         'winery':'Winery',
+                                         'points':'Rating (Out of 100)',
+                                         'price':'Price',
+                                         'description':'Review',
+                                         'traits':'Key Traits'}, inplace=True)
+            st.balloons()
+            st.dataframe(df_rec_final.style.format({"Price": "${:,.2f}"}))
+
+with tab2:
+    st.title("Wine Catalog")
+    st.write("Browse through our collection of wines")
+    
+    # Add search functionality
+    search_term = st.text_input("Search wines by name, variety, or winery:", "")
+    
+    # Get unique wines from the dataframe
+    catalog_df = df_wine_combi.drop_duplicates(subset=['title'])
+    
+    # Apply search filter if search term is provided
+    if search_term:
+        search_term = search_term.lower()
+        catalog_df = catalog_df[
+            catalog_df['title'].str.lower().str.contains(search_term, na=False) |
+            catalog_df['variety'].str.lower().str.contains(search_term, na=False) |
+            catalog_df['winery'].str.lower().str.contains(search_term, na=False)
+        ]
+        
+        # Show search results feedback
+        result_count = len(catalog_df)
+        if result_count == 0:
+            st.warning("No wines found matching your search. Please try different keywords.")
+        else:
+            st.success(f"Found {result_count} wine{'s' if result_count != 1 else ''} matching your search.")
+    
+    # Get the wines to display
+    catalog_display = catalog_df[['title', 'variety', 'winery', 'country', 'province', 'points', 'price', 'description', 'traits']].head(st.session_state.wines_displayed)
+    
+    # Initialize session states
+    if 'view_wine_details' not in st.session_state:
+        st.session_state.view_wine_details = False
+    if 'selected_wine' not in st.session_state:
+        st.session_state.selected_wine = None
+    
+    # Show either the catalog or the wine details
+    if st.session_state.view_wine_details and st.session_state.selected_wine is not None:
+        # Back button
+        if st.button("← Back to Catalog"):
+            st.session_state.view_wine_details = False
+            st.session_state.selected_wine = None
+            st.rerun()
+        
+        # Wine Details Page
+        wine = st.session_state.selected_wine
+        
+        # Determine which image to use
+        if 'sparkling' in wine['variety'].lower():
+            image_type = 'sparkling'
+        elif 'rosé' in wine['variety'].lower() or 'rose' in wine['variety'].lower():
+            image_type = 'rose'
+        elif 'red' in wine['variety'].lower() or 'blend' in wine['variety'].lower():
+            image_type = 'red'
+        else:
+            image_type = 'white'
+        
+        # Create two columns for the details page
+        col1, col2 = st.columns([3, 2])
+        
+        with col1:
+            st.markdown(f'''
+                <div class="wine-image" style="height: 400px;">
+                    <img src="{wine_images[image_type]}" alt="{wine['title']}" onerror="handleImageError(this)" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div class="wine-icon-fallback">
+                        {get_wine_icon(wine['variety'])}
+                    </div>
+                </div>
+            ''', unsafe_allow_html=True)
+            st.markdown(f"<h1 style='font-family: Playfair Display; color: #2C1810;'>{wine['title']}</h1>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='font-family: Playfair Display; color: #B4A169; font-size: 24px;'>${wine['price']:,.2f}</h2>", unsafe_allow_html=True)
+            st.markdown("### Description")
+            st.write(wine['description'])
+        
+        with col2:
+            st.markdown("### Wine Details")
+            st.markdown(f"**Variety:** {wine['variety']}")
+            st.markdown(f"**Winery:** {wine['winery']}")
+            st.markdown(f"**Region:** {wine['province']}, {wine['country']}")
+            st.markdown(f"**Rating:** {wine['points']}/100")
+            
+            st.markdown("### Characteristics")
+            traits_list = wine['traits'].split() if isinstance(wine['traits'], str) else []
+            traits_html = ''.join([f'<span class="wine-trait">{trait.replace("_", " ").title()}</span>' for trait in traits_list])
+            st.markdown(f'<div class="wine-traits-detail">{traits_html}</div>', unsafe_allow_html=True)
+            
+            # Replace the static Add to Cart button with a functional one
+            if st.button("Add to Cart", key=f"add_to_cart_{wine['title']}", type="primary", help="Add this wine to your shopping cart"):
+                st.session_state.cart.append(wine)
+                st.session_state.cart_total += wine['price']
+                st.success(f"{wine['title']} has been added to your cart!")
+                time.sleep(1)
+                st.rerun()
+    
+    else:
+        # Create a container for better layout control
+        st.markdown('<div class="wine-catalog-container">', unsafe_allow_html=True)
+        
+        for _, row in catalog_display.iterrows():
+            # Create a masonry item for each wine
+            st.markdown(f'''
+                <div class="wine-item">
+                    <div class="wine-image">
+                        <img src="{wine_images[image_type]}" alt="{row['title']}" onerror="handleImageError(this)" loading="lazy">
+                        <div class="wine-icon-fallback">
+                            {get_wine_icon(row['variety'])}
+                        </div>
+                    </div>
+                    <div class="wine-content">
+                        <div class="wine-price">${row['price']:,.2f}</div>
+                        <div class="wine-title">{row['title']}</div>
+                        <div class="wine-details">{row['variety']}</div>
+                        <div class="wine-details">{row['winery']}</div>
+                        <div class="wine-rating">Rating: {row['points']}/100</div>
+                    </div>
+                </div>
+            ''', unsafe_allow_html=True)
+            
+            # Hidden button for handling click events
+            if st.button("View Details", key=f"view_details_{_}", type="secondary"):
+                st.session_state.selected_wine = row
+                st.session_state.view_wine_details = True
+                st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Load More button
+        if st.session_state.wines_displayed < len(catalog_df):
+            st.markdown('<div style="text-align: center; padding: 2rem;">', unsafe_allow_html=True)
+            if st.button("Load More Wines"):
+                st.session_state.wines_displayed += 10
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+# Add Admin Dashboard tab content
+with tab4:
     st.title("Admin Dashboard")
     
     if not st.session_state.is_admin:
@@ -1523,193 +1479,3 @@ with tab3:
             with payment_cols[1]:
                 st.metric("Refunds", "$234")
                 st.metric("Average Order Value", "$245")
-
-with tab1:
-    st.title("Which wine should I get?")
-    st.write("By Lee Wan Xian")
-    st.write("[GitHub](https://github.com/leewanxian) | [LinkedIn](https://www.linkedin.com/in/wanxianlee)")
-    st.write("You can type the wine traits that you want in the dropdown list below")
-    add_bg_from_url()
-
-    select_temptrait = st.multiselect(label = " ", options = all_traits, label_visibility = "collapsed")
-
-    if st.button('Show me the wines!'):
-        with st.spinner('Should you have some wine now?'):
-            
-            time.sleep(2)
-            # Instantiate selected wine traits
-            if len(select_temptrait) == 0:
-                selected_traits = all_traits
-            else:
-                selected_traits = select_temptrait
-
-            # Run recommender model
-            recommend_df = recommend_scores()
-        
-            # Instantiate traits filter
-            trait_filter = ['title']
-
-            # Add on any traits selected by user
-            trait_filter.extend(selected_traits)
-
-            # Create dataframe for wine name and traits
-            df_temp_traits = df_wine_combi.drop(columns=['taster_name', 'points', 'variety', 'designation', 'winery', 'country', 'province', 'region_1', 'region_2', 'price', 'description',
-                                                         'desc_wd_count', 'traits'])
-
-            # Code to start filtering out wines with either one of the selected traits
-            df_temp_traits = df_temp_traits[trait_filter]
-            df_temp_traits['sum'] = df_temp_traits.sum(axis=1, numeric_only=True)
-            df_temp_traits = df_temp_traits[df_temp_traits['sum'] != 0]
-
-            # Merge the selected wines traits with recommend scores
-            df_selectrec_temp = df_temp_traits.merge(recommend_df, on='title', how='left')
-
-            # Merge the selected wines with recommendations with df on details
-            df_selectrec_detail = df_selectrec_temp.merge(df_wine_combi, on='title', how='left')
-            df_selectrec_detail.drop_duplicates(inplace=True)
-
-            # Pull out the top 10 recommendations (raw)
-            df_rec_raw = df_selectrec_detail.sort_values('est_match_pts', ascending=False).head(10)
-            
-            # Prepare the display for the top 10 recommendations
-            df_rec_final = df_rec_raw[['title', 'points', 'price', 'variety', 'country', 'province', 'winery', 'description', 'traits']].reset_index(drop=True)
-            df_rec_final.index = df_rec_final.index + 1
-            df_rec_final['traits']=df_rec_final['traits'].str.replace(" ", " | ")
-            df_rec_final.rename(columns={'title':'Name',
-                                         'country':'Country',
-                                         'province':'State/Province',
-                                         'variety':'Type',
-                                         'winery':'Winery',
-                                         'points':'Rating (Out of 100)',
-                                         'price':'Price',
-                                         'description':'Review',
-                                         'traits':'Key Traits'}, inplace=True)
-            st.balloons()
-            st.dataframe(df_rec_final.style.format({"Price": "${:,.2f}"}))
-
-with tab2:
-    st.title("Wine Catalog")
-    st.write("Browse through our collection of wines")
-    
-    # Add search functionality
-    search_term = st.text_input("Search wines by name, variety, or winery:", "")
-    
-    # Get unique wines from the dataframe
-    catalog_df = df_wine_combi.drop_duplicates(subset=['title'])
-    
-    # Apply search filter if search term is provided
-    if search_term:
-        search_term = search_term.lower()
-        catalog_df = catalog_df[
-            catalog_df['title'].str.lower().str.contains(search_term, na=False) |
-            catalog_df['variety'].str.lower().str.contains(search_term, na=False) |
-            catalog_df['winery'].str.lower().str.contains(search_term, na=False)
-        ]
-    
-    # Get the wines to display
-    catalog_display = catalog_df[['title', 'variety', 'winery', 'country', 'province', 'points', 'price', 'description', 'traits']].head(st.session_state.wines_displayed)
-    
-    # Initialize session states
-    if 'view_wine_details' not in st.session_state:
-        st.session_state.view_wine_details = False
-    if 'selected_wine' not in st.session_state:
-        st.session_state.selected_wine = None
-    
-    # Show either the catalog or the wine details
-    if st.session_state.view_wine_details and st.session_state.selected_wine is not None:
-        # Back button
-        if st.button("← Back to Catalog"):
-            st.session_state.view_wine_details = False
-            st.session_state.selected_wine = None
-            st.rerun()
-        
-        # Wine Details Page
-        wine = st.session_state.selected_wine
-        
-        # Determine which image to use
-        if 'sparkling' in wine['variety'].lower():
-            image_type = 'sparkling'
-        elif 'rosé' in wine['variety'].lower() or 'rose' in wine['variety'].lower():
-            image_type = 'rose'
-        elif 'red' in wine['variety'].lower() or 'blend' in wine['variety'].lower():
-            image_type = 'red'
-        else:
-            image_type = 'white'
-        
-        # Create two columns for the details page
-        col1, col2 = st.columns([3, 2])
-        
-        with col1:
-            st.image(wine_images[image_type], width=400)
-            st.markdown(f"<h1 style='font-family: Playfair Display; color: #2C1810;'>{wine['title']}</h1>", unsafe_allow_html=True)
-            st.markdown(f"<h2 style='font-family: Playfair Display; color: #B4A169; font-size: 24px;'>${wine['price']:,.2f}</h2>", unsafe_allow_html=True)
-            st.markdown("### Description")
-            st.write(wine['description'])
-        
-        with col2:
-            st.markdown("### Wine Details")
-            st.markdown(f"**Variety:** {wine['variety']}")
-            st.markdown(f"**Winery:** {wine['winery']}")
-            st.markdown(f"**Region:** {wine['province']}, {wine['country']}")
-            st.markdown(f"**Rating:** {wine['points']}/100")
-            
-            st.markdown("### Characteristics")
-            traits_list = wine['traits'].split() if isinstance(wine['traits'], str) else []
-            traits_html = ''.join([f'<span class="wine-trait">{trait.replace("_", " ").title()}</span>' for trait in traits_list])
-            st.markdown(f'<div class="wine-traits-detail">{traits_html}</div>', unsafe_allow_html=True)
-            
-            # Add to Cart button (placeholder)
-            st.markdown('<button class="add-to-cart-btn">Add to Cart</button>', unsafe_allow_html=True)
-    
-    else:
-        # Create a container for better layout control
-        st.markdown('<div class="wine-catalog-container">', unsafe_allow_html=True)
-        
-        # Display wine catalog grid
-        cols = st.columns(3)
-        
-        for idx, row in catalog_display.iterrows():
-            # Determine which image to use based on variety
-            if 'sparkling' in row['variety'].lower():
-                image_type = 'sparkling'
-            elif 'rosé' in row['variety'].lower() or 'rose' in row['variety'].lower():
-                image_type = 'rose'
-            elif 'red' in row['variety'].lower() or 'blend' in row['variety'].lower():
-                image_type = 'red'
-            else:
-                image_type = 'white'
-            
-            # Create a card for each wine
-            with cols[idx % 3]:
-                st.markdown(f'''
-                    <div class="wine-card">
-                        <div class="wine-image-container">
-                            <img src="{wine_images[image_type]}" alt="{row['title']}" loading="lazy">
-                            <div class="wine-overlay">
-                                <button class="view-details-btn">View Details</button>
-                            </div>
-                        </div>
-                        <div class="wine-card-content">
-                            <div class="wine-price">${row['price']:,.2f}</div>
-                            <div class="wine-title">{row['title']}</div>
-                            <div class="wine-details">{row['variety']}</div>
-                            <div class="wine-details">Rating: {row['points']}/100</div>
-                        </div>
-                    </div>
-                ''', unsafe_allow_html=True)
-                
-                # Hidden button for handling click events
-                if st.button("View Details", key=f"view_details_{idx}", type="secondary"):
-                    st.session_state.selected_wine = row
-                    st.session_state.view_wine_details = True
-                    st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Load More button
-        if st.session_state.wines_displayed < len(catalog_df):
-            st.markdown('<div style="text-align: center; padding: 2rem;">', unsafe_allow_html=True)
-            if st.button("Load More Wines"):
-                st.session_state.wines_displayed += 10
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
