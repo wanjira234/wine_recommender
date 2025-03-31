@@ -13,6 +13,62 @@ import plotly.express as px
 import plotly.figure_factory as ff
 from datetime import datetime
 
+# User data functions
+def load_user_data():
+    try:
+        with open('user_data.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"users": {}}
+
+def save_user_data(data):
+    with open('user_data.json', 'w') as f:
+        json.dump(data, f, indent=4)
+
+def create_user_account(username, password, email, name):
+    user_data = load_user_data()
+    if username in user_data["users"]:
+        return False, "Username already exists"
+    
+    user_data["users"][username] = {
+        "password": hash_password(password),
+        "email": email,
+        "name": name,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "preferences": {
+            "wine_types": [],
+            "traits": []
+        }
+    }
+    save_user_data(user_data)
+    return True, "Account created successfully"
+
+def check_user_login(username, password):
+    user_data = load_user_data()
+    if username not in user_data["users"]:
+        return False, "User not found"
+    
+    if user_data["users"][username]["password"] == hash_password(password):
+        return True, "Login successful"
+    return False, "Invalid password"
+
+def update_user_preferences(username, wine_types, traits):
+    user_data = load_user_data()
+    if username not in user_data["users"]:
+        return False, "User not found"
+    
+    user_data["users"][username]["preferences"]["wine_types"] = wine_types
+    user_data["users"][username]["preferences"]["traits"] = traits
+    save_user_data(user_data)
+    return True, "Preferences updated successfully"
+
+def load_image(image_path):
+    try:
+        return Image.open(image_path)
+    except Exception as e:
+        st.error(f"Error loading image: {e}")
+        return None
+
 def get_wine_icon(variety):
     variety = variety.lower()
     if 'sparkling' in variety:
@@ -911,113 +967,96 @@ with tab1:
     # Hero Section with learn-more.jpg background
     hero_image = load_image('images/learn-more.jpg')
     if hero_image:
-        st.image(hero_image, use_column_width=True)
+        st.image(hero_image, use_container_width=True)
     
     st.markdown("""
         <h1 style="text-align: center; font-size: 4rem; margin-bottom: 1rem; font-family: 'Playfair Display', serif; color: #2C1810;">Welcome to WineWise</h1>
-        <p style="text-align: center; font-size: 1.8rem; margin-bottom: 2rem; font-family: 'Playfair Display', serif; color: #2C1810;">Your Personal Wine Companion</p>
-        <div style="text-align: center;">
-            <a href="#wine-recommender" style="background-color: #722F37; color: white; padding: 1.2rem 2.5rem; border-radius: 30px; text-decoration: none; font-size: 1.3rem; transition: all 0.3s ease; font-family: 'Playfair Display', serif;">Discover Your Perfect Wine</a>
-        </div>
     """, unsafe_allow_html=True)
-    
-    # Featured Collections with wine images
-    st.markdown("""
-        <h2 style="text-align: center; color: #722F37; font-size: 2.5rem; margin: 3rem 0; font-family: 'Playfair Display', serif;">Our Collections</h2>
-    """, unsafe_allow_html=True)
-    
+
     featured_cols = st.columns(2)
     with featured_cols[0]:
         red_wine_image = load_image('images/red-wine.jpg')
         if red_wine_image:
-            st.image(red_wine_image, caption="Premium Red Wines", use_column_width=True)
+            st.image(red_wine_image, caption="Premium Red Wines", use_container_width=True)
         
         rose_wine_image = load_image('images/rose-wine.jpg')
         if rose_wine_image:
-            st.image(rose_wine_image, caption="Rosé Collection", use_column_width=True)
+            st.image(rose_wine_image, caption="Rosé Collection", use_container_width=True)
     
     with featured_cols[1]:
         white_wine_image = load_image('images/white-wine.jpg')
         if white_wine_image:
-            st.image(white_wine_image, caption="White Wine Selection", use_column_width=True)
+            st.image(white_wine_image, caption="White Wine Selection", use_container_width=True)
         
         sparkling_wine_image = load_image('images/sparkling-wine.jpg')
         if sparkling_wine_image:
-            st.image(sparkling_wine_image, caption="Sparkling Wines", use_column_width=True)
-    
-    # Featured Experience Section
-    st.markdown("""
-        <div style="text-align: center; padding: 4rem 2rem; margin-top: 3rem; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('images/learn-more.jpg'); background-size: cover; background-position: center; color: white; border-radius: 10px;">
-            <h2 style="font-size: 2.5rem; margin-bottom: 2rem; font-family: 'Playfair Display', serif;">Experience the Art of Wine</h2>
-            <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 2rem; max-width: 1200px; margin: 0 auto;">
-                <div style="flex: 1; min-width: 250px; padding: 2rem; background: rgba(255,255,255,0.1); border-radius: 10px;">
-                    <i class="fas fa-wine-glass" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
-                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Playfair Display', serif;">Expert Selection</h3>
-                    <p style="font-size: 1.1rem; font-family: 'Playfair Display', serif;">Curated by wine connoisseurs</p>
-                </div>
-                <div style="flex: 1; min-width: 250px; padding: 2rem; background: rgba(255,255,255,0.1); border-radius: 10px;">
-                    <i class="fas fa-star" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
-                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Playfair Display', serif;">Premium Quality</h3>
-                    <p style="font-size: 1.1rem; font-family: 'Playfair Display', serif;">Only the finest wines</p>
-                </div>
-                <div style="flex: 1; min-width: 250px; padding: 2rem; background: rgba(255,255,255,0.1); border-radius: 10px;">
-                    <i class="fas fa-truck" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
-                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; font-family: 'Playfair Display', serif;">Fast Delivery</h3>
-                    <p style="font-size: 1.1rem; font-family: 'Playfair Display', serif;">Right to your doorstep</p>
-                </div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+            st.image(sparkling_wine_image, caption="Sparkling Wines", use_container_width=True)
 
 # About Us Section
 with tab2:
     st.markdown("""
-        <div style="text-align: center; padding: 2rem;">
-            <h1 style="color: #722F37; margin-bottom: 2rem;">About WineWise</h1>
-            <div style="max-width: 800px; margin: 0 auto;">
-                <p style="font-size: 1.2rem; line-height: 1.6; margin-bottom: 2rem;">
-                    WineWise is your trusted companion in the world of wine. We combine cutting-edge technology with expert knowledge to help you discover the perfect wine for your palate.
-                </p>
-                <p style="font-size: 1.2rem; line-height: 1.6; margin-bottom: 2rem;">
-                    Our mission is to make wine selection accessible and enjoyable for everyone, from beginners to connoisseurs. We believe that every wine lover deserves to find their perfect match.
-                </p>
-                <p style="font-size: 1.2rem; line-height: 1.6;">
-                    Join us on this journey of discovery, where technology meets tradition in the world of wine.
-                </p>
-            </div>
+        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>About WineWise</h1>
+            
+            <h2 style='color: #2C1810; margin-bottom: 1rem;'>Our Story</h2>
+            <p style='color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
+                WineWise was founded with a passion for connecting wine enthusiasts with their perfect bottle. 
+                Our sophisticated recommendation system combines expert knowledge with advanced technology to 
+                provide personalized wine suggestions tailored to your unique taste preferences.
+            </p>
+
+            <h2 style='color: #2C1810; margin-bottom: 1rem;'>Our Mission</h2>
+            <p style='color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
+                We strive to make the world of wine accessible to everyone, from novices to connoisseurs. 
+                Through our carefully curated selection and intelligent recommendations, we help you discover 
+                wines that perfectly match your palate and preferences.
+            </p>
+
+            <h2 style='color: #2C1810; margin-bottom: 1rem;'>Why Choose Us</h2>
+            <ul style='color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
+                <li>Expert-curated wine selection</li>
+                <li>Personalized recommendations</li>
+                <li>Educational resources and wine knowledge</li>
+                <li>Secure shopping experience</li>
+                <li>Exceptional customer service</li>
+            </ul>
         </div>
     """, unsafe_allow_html=True)
 
 # Learn Section
 with tab3:
     st.markdown("""
-        <div style="text-align: center; padding: 2rem;">
-            <h1 style="color: #722F37; margin-bottom: 2rem;">Learn About Wine</h1>
+        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Learn About Wine</h1>
         </div>
     """, unsafe_allow_html=True)
-    
-    learn_cols = st.columns(2)
-    with learn_cols[0]:
+
+    col1, col2 = st.columns(2)
+
+    with col1:
         st.markdown("""
-            <div style="padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <h2 style="color: #722F37; margin-bottom: 1rem;">Wine Basics</h2>
-                <ul style="list-style-type: none; padding: 0;">
-                    <li style="margin-bottom: 1rem;">• Understanding Wine Varieties</li>
-                    <li style="margin-bottom: 1rem;">• Reading Wine Labels</li>
-                    <li style="margin-bottom: 1rem;">• Wine Tasting Techniques</li>
-                    <li style="margin-bottom: 1rem;">• Food and Wine Pairing</li>
+            <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                <h2 style='color: #2C1810; margin-bottom: 1rem;'>Wine Basics</h2>
+                <ul style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
+                    <li>Understanding Wine Types</li>
+                    <li>Wine Tasting Techniques</li>
+                    <li>Food and Wine Pairing</li>
+                    <li>Wine Storage Tips</li>
+                    <li>Reading Wine Labels</li>
                 </ul>
             </div>
         """, unsafe_allow_html=True)
-    with learn_cols[1]:
+
+    with col2:
         st.markdown("""
-            <div style="padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <h2 style="color: #722F37; margin-bottom: 1rem;">Advanced Topics</h2>
-                <ul style="list-style-type: none; padding: 0;">
-                    <li style="margin-bottom: 1rem;">• Wine Regions and Terroir</li>
-                    <li style="margin-bottom: 1rem;">• Wine Production Process</li>
-                    <li style="margin-bottom: 1rem;">• Wine Storage and Aging</li>
-                    <li style="margin-bottom: 1rem;">• Wine Investment</li>
+            <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                <h2 style='color: #2C1810; margin-bottom: 1rem;'>Advanced Topics</h2>
+                <ul style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
+                    <li>Wine Regions</li>
+                    <li>Winemaking Process</li>
+                    <li>Wine Investment</li>
+                    <li>Vintage Guides</li>
+                    <li>Wine Certification</li>
                 </ul>
             </div>
         """, unsafe_allow_html=True)
@@ -1025,655 +1064,283 @@ with tab3:
 # Contact Section
 with tab4:
     st.markdown("""
-        <div style="text-align: center; padding: 2rem;">
-            <h1 style="color: #722F37; margin-bottom: 2rem;">Contact Us</h1>
+        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Contact Us</h1>
         </div>
     """, unsafe_allow_html=True)
-    
-    contact_cols = st.columns(2)
-    with contact_cols[0]:
+
+    contact_col1, contact_col2 = st.columns(2)
+
+    with contact_col1:
         st.markdown("""
-            <div style="padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <h2 style="color: #722F37; margin-bottom: 1rem;">Get in Touch</h2>
-                <p style="margin-bottom: 1rem;">Have questions about our wine recommendations?</p>
-                <p style="margin-bottom: 1rem;">Need help with your order?</p>
-                <p style="margin-bottom: 1rem;">Want to learn more about our services?</p>
-                <p>We're here to help!</p>
+            <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                <h2 style='color: #2C1810; margin-bottom: 1rem;'>Get in Touch</h2>
+                <form>
+                    <div style='margin-bottom: 1rem;'>
+                        <label style='display: block; margin-bottom: 0.5rem; color: #2C1810;'>Name</label>
+                        <input type='text' style='width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #dee2e6;'>
+                    </div>
+                    <div style='margin-bottom: 1rem;'>
+                        <label style='display: block; margin-bottom: 0.5rem; color: #2C1810;'>Email</label>
+                        <input type='email' style='width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #dee2e6;'>
+                    </div>
+                    <div style='margin-bottom: 1rem;'>
+                        <label style='display: block; margin-bottom: 0.5rem; color: #2C1810;'>Message</label>
+                        <textarea style='width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #dee2e6; height: 150px;'></textarea>
+                    </div>
+                </form>
             </div>
         """, unsafe_allow_html=True)
-    with contact_cols[1]:
-        with st.form("contact_form"):
-            st.text_input("Name")
-            st.text_input("Email")
-            st.selectbox("Subject", ["General Inquiry", "Order Support", "Wine Recommendations", "Other"])
-            st.text_area("Message")
-            st.form_submit_button("Send Message")
+        st.button("Send Message")
 
-# Admin Login Section
-with tab7:
-    st.title("Shopping Cart")
-    
-    if not st.session_state.cart:
-        st.info("Your cart is empty. Browse our Wine Catalog to add some wines!")
-    else:
-        # Display cart items
-        st.subheader("Cart Items")
-        for idx, item in enumerate(st.session_state.cart):
-            col1, col2, col3 = st.columns([3, 1, 1])
-            with col1:
-                st.markdown(f'<div class="wine-details-cart"><strong>{item["title"]}</strong><br/><em>{item["variety"]}</em> - {item["winery"]}</div>', unsafe_allow_html=True)
-            with col2:
-                st.markdown(f'<div class="wine-price-cart">${item["price"]:.2f}</div>', unsafe_allow_html=True)
-            with col3:
-                if st.button("Remove", key=f"remove_{idx}"):
-                    st.session_state.cart_total -= item['price']
-                    st.session_state.cart.pop(idx)
-                    st.rerun()
-        
-        # Display total and checkout form
-        st.markdown("---")
-        st.markdown(f"### Total: ${st.session_state.cart_total:.2f}")
-        
-        # Checkout Form
-        with st.form("checkout_form"):
-            st.subheader("Checkout Information")
-            col1, col2 = st.columns(2)
-            with col1:
-                first_name = st.text_input("First Name")
-                email = st.text_input("Email")
-                address = st.text_area("Shipping Address")
-            with col2:
-                last_name = st.text_input("Last Name")
-                phone = st.text_input("Phone Number")
+    with contact_col2:
+        st.markdown("""
+            <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                <h2 style='color: #2C1810; margin-bottom: 1rem;'>Support Hours</h2>
+                <p style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
+                    Monday - Friday: 9:00 AM - 6:00 PM<br>
+                    Saturday: 10:00 AM - 4:00 PM<br>
+                    Sunday: Closed
+                </p>
                 
-            # Payment Information
-            st.subheader("Payment Information")
-            col3, col4 = st.columns(2)
-            with col3:
-                card_number = st.text_input("Card Number")
-                card_name = st.text_input("Name on Card")
-            with col4:
-                expiry = st.text_input("Expiry Date (MM/YY)")
-                cvv = st.text_input("CVV", type="password")
-                
-            submit_order = st.form_submit_button("Place Order")
-            
-            if submit_order:
-                if all([first_name, last_name, email, phone, address, card_number, card_name, expiry, cvv]):
-                    # Create order record
-                    order = {
-                        'order_id': f"#{len(st.session_state.orders) + 1:03d}",
-                        'customer': f"{first_name} {last_name}",
-                        'amount': st.session_state.cart_total,
-                        'status': 'Processing',
-                        'date': datetime.now().strftime('%Y-%m-%d'),
-                        'items': st.session_state.cart.copy()
-                    }
-                    st.session_state.orders.append(order)
-                    
-                    st.success("Order placed successfully! You will receive a confirmation email shortly.")
-                    st.session_state.cart = []
-                    st.session_state.cart_total = 0.0
-                    st.rerun()
-                else:
-                    st.error("Please fill in all required fields.")
+                <h2 style='color: #2C1810; margin: 1.5rem 0 1rem;'>Contact Information</h2>
+                <p style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
+                    Email: support@winewise.com<br>
+                    Phone: (555) 123-4567<br>
+                    Address: 123 Wine Street, Vintage Valley, CA 90210
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
 
+# Wine Recommender Section
 with tab5:
-    st.title("Which wine should I get?")
-    st.write("By Lee Wan Xian")
-    st.write("[GitHub](https://github.com/leewanxian) | [LinkedIn](https://www.linkedin.com/in/wanxianlee)")
-    st.write("You can type the wine traits that you want in the dropdown list below")
-    add_bg_from_url()
+    st.markdown("""
+        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Wine Recommender</h1>
+            <p style='text-align: center; color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
+                Get personalized wine recommendations based on your preferences
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
 
-    select_temptrait = st.multiselect(label = " ", options = all_traits, label_visibility = "collapsed")
+    # Add your existing wine recommendation logic here
+    st.write("Select your wine preferences:")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        price_range = st.slider("Price Range ($)", 0, 500, (20, 100), key="recommender_price")
+        wine_type = st.multiselect("Wine Type", ["Red", "White", "Rosé", "Sparkling"], key="recommender_wine_type")
+    
+    with col2:
+        rating_min = st.slider("Minimum Rating", 80, 100, 85, key="recommender_rating")
+        country = st.multiselect("Country", df_wine_combi['country'].unique().tolist(), key="recommender_country")
 
-    if st.button('Show me the wines!'):
-        with st.spinner('Should you have some wine now?'):
-            
-            time.sleep(2)
-            # Instantiate selected wine traits
-            if len(select_temptrait) == 0:
-                selected_traits = all_traits
-            else:
-                selected_traits = select_temptrait
+    if st.button("Get Recommendations"):
+        st.write("Based on your preferences, here are our recommendations:")
+        # Add your recommendation display logic here
 
-            # Run recommender model
-            recommend_df = recommend_scores()
-        
-            # Instantiate traits filter
-            trait_filter = ['title']
-
-            # Add on any traits selected by user
-            trait_filter.extend(selected_traits)
-
-            # Create dataframe for wine name and traits
-            df_temp_traits = df_wine_combi.drop(columns=['taster_name', 'points', 'variety', 'designation', 'winery', 'country', 'province', 'region_1', 'region_2', 'price', 'description',
-                                                         'desc_wd_count', 'traits'])
-
-            # Code to start filtering out wines with either one of the selected traits
-            df_temp_traits = df_temp_traits[trait_filter]
-            df_temp_traits['sum'] = df_temp_traits.sum(axis=1, numeric_only=True)
-            df_temp_traits = df_temp_traits[df_temp_traits['sum'] != 0]
-
-            # Merge the selected wines traits with recommend scores
-            df_selectrec_temp = df_temp_traits.merge(recommend_df, on='title', how='left')
-
-            # Merge the selected wines with recommendations with df on details
-            df_selectrec_detail = df_selectrec_temp.merge(df_wine_combi, on='title', how='left')
-            df_selectrec_detail.drop_duplicates(inplace=True)
-
-            # Pull out the top 10 recommendations (raw)
-            df_rec_raw = df_selectrec_detail.sort_values('est_match_pts', ascending=False).head(10)
-            
-            # Prepare the display for the top 10 recommendations
-            df_rec_final = df_rec_raw[['title', 'points', 'price', 'variety', 'country', 'province', 'winery', 'description', 'traits']].reset_index(drop=True)
-            df_rec_final.index = df_rec_final.index + 1
-            df_rec_final['traits']=df_rec_final['traits'].str.replace(" ", " | ")
-            df_rec_final.rename(columns={'title':'Name',
-                                         'country':'Country',
-                                         'province':'State/Province',
-                                         'variety':'Type',
-                                         'winery':'Winery',
-                                         'points':'Rating (Out of 100)',
-                                         'price':'Price',
-                                         'description':'Review',
-                                         'traits':'Key Traits'}, inplace=True)
-            st.balloons()
-            st.dataframe(df_rec_final.style.format({"Price": "${:,.2f}"}))
-
+# Wine Catalog Section
 with tab6:
-    st.title("Wine Catalog")
-    st.write("Browse through our collection of wines")
+    st.markdown("""
+        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Wine Catalog</h1>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Add search and filter options
+    search = st.text_input("Search wines by name, variety, or winery")
     
-    # Add search functionality
-    search_term = st.text_input("Search wines by name, variety, or winery:", "")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        price_filter = st.slider("Price Range ($)", 0, 500, (0, 500), key="catalog_price")
+    with col2:
+        variety_filter = st.multiselect("Variety", df_wine_combi['variety'].unique().tolist(), key="catalog_variety")
+    with col3:
+        country_filter = st.multiselect("Country", df_wine_combi['country'].unique().tolist(), key="catalog_country")
+
+    # Display wine catalog
+    filtered_wines = df_wine_combi  # Add your filtering logic here
+    st.write(f"Showing {len(filtered_wines)} wines")
     
-    # Get unique wines from the dataframe
-    catalog_df = df_wine_combi.drop_duplicates(subset=['title'])
-    
-    # Apply search filter if search term is provided
-    if search_term:
-        search_term = search_term.lower()
-        catalog_df = catalog_df[
-            catalog_df['title'].str.lower().str.contains(search_term, na=False) |
-            catalog_df['variety'].str.lower().str.contains(search_term, na=False) |
-            catalog_df['winery'].str.lower().str.contains(search_term, na=False)
-        ]
+    # Display wines in a grid
+    for i in range(0, len(filtered_wines), 3):
+        cols = st.columns(3)
+        for j in range(3):
+            if i + j < len(filtered_wines):
+                with cols[j]:
+                    wine = filtered_wines.iloc[i + j]
+                    st.markdown(f"""
+                        <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                            <h3 style='color: #2C1810;'>{wine['title']}</h3>
+                            <p style='color: #B4A169; font-weight: 600;'>${wine['price']}</p>
+                            <p style='color: #495057;'>{wine['variety']} • {wine['country']}</p>
+                            <p style='color: #495057;'>{wine['points']} points</p>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+# Shopping Cart Section
+with tab7:
+    st.markdown("""
+        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Shopping Cart</h1>
+        </div>
+    """, unsafe_allow_html=True)
+
+    if not st.session_state.user_logged_in:
+        st.warning("Please create an account or log in to access the shopping cart")
         
-        # Show search results feedback
-        result_count = len(catalog_df)
-        if result_count == 0:
-            st.warning("No wines found matching your search. Please try different keywords.")
-        else:
-            st.success(f"Found {result_count} wine{'s' if result_count != 1 else ''} matching your search.")
-    
-    # Get the wines to display
-    catalog_display = catalog_df[['title', 'variety', 'winery', 'country', 'province', 'points', 'price', 'description', 'traits']].head(st.session_state.wines_displayed)
-    
-    # Initialize session states
-    if 'view_wine_details' not in st.session_state:
-        st.session_state.view_wine_details = False
-    if 'selected_wine' not in st.session_state:
-        st.session_state.selected_wine = None
-    
-    # Show either the catalog or the wine details
-    if st.session_state.view_wine_details and st.session_state.selected_wine is not None:
-        # Back button
-        if st.button("← Back to Catalog"):
-            st.session_state.view_wine_details = False
-            st.session_state.selected_wine = None
-            st.rerun()
-        
-        # Wine Details Page
-        wine = st.session_state.selected_wine
-        
-        # Determine which image to use
-        if 'sparkling' in wine['variety'].lower():
-            image_type = 'sparkling'
-        elif 'rosé' in wine['variety'].lower() or 'rose' in wine['variety'].lower():
-            image_type = 'rose'
-        elif 'red' in wine['variety'].lower() or 'blend' in wine['variety'].lower():
-            image_type = 'red'
-        else:
-            image_type = 'white'
-        
-        # Create two columns for the details page
-        col1, col2 = st.columns([3, 2])
-        
+        col1, col2 = st.columns(2)
         with col1:
-            wine_image = load_image(wine_images[image_type])
-            if wine_image:
-                st.image(wine_image, caption=wine['title'], use_column_width=True)
-            else:
-                st.markdown(f'<div class="wine-icon-fallback show">{get_wine_icon(wine["variety"])}</div>', unsafe_allow_html=True)
+            st.markdown("### Create Account")
+            new_username = st.text_input("Username", key="new_username")
+            new_password = st.text_input("Password", type="password", key="new_password")
+            new_email = st.text_input("Email", key="new_email")
+            new_name = st.text_input("Full Name", key="new_name")
             
-            st.markdown(f"<h1 style='font-family: Playfair Display; color: #2C1810;'>{wine['title']}</h1>", unsafe_allow_html=True)
-            st.markdown(f"<h2 style='font-family: Playfair Display; color: #B4A169; font-size: 24px;'>${wine['price']:,.2f}</h2>", unsafe_allow_html=True)
-            st.markdown("### Description")
-            st.write(wine['description'])
+            if st.button("Create Account"):
+                success, message = create_user_account(new_username, new_password, new_email, new_name)
+                if success:
+                    st.session_state.user_logged_in = True
+                    st.session_state.current_user = new_username
+                    st.success(message)
+                else:
+                    st.error(message)
         
         with col2:
-            st.markdown("### Wine Details")
-            st.markdown(f"**Variety:** {wine['variety']}")
-            st.markdown(f"**Winery:** {wine['winery']}")
-            st.markdown(f"**Region:** {wine['province']}, {wine['country']}")
-            st.markdown(f"**Rating:** {wine['points']}/100")
-            
-            st.markdown("### Characteristics")
-            traits_list = wine['traits'].split() if isinstance(wine['traits'], str) else []
-            traits_html = ''.join([f'<span class="wine-trait">{trait.replace("_", " ").title()}</span>' for trait in traits_list])
-            st.markdown(f'<div class="wine-traits-detail">{traits_html}</div>', unsafe_allow_html=True)
-            
-            if st.button("Add to Cart", key=f"add_to_cart_{wine['title']}", type="primary", help="Add this wine to your shopping cart"):
-                st.session_state.cart.append(wine)
-                st.session_state.cart_total += wine['price']
-                st.success(f"{wine['title']} has been added to your cart!")
-                time.sleep(1)
-                st.rerun()
-    
-    else:
-        # Create a grid layout for the catalog
-        cols = st.columns(3)
-        for idx, row in catalog_display.iterrows():
-            col = cols[idx % 3]
-            with col:
-                # Determine image type based on variety
-                if 'sparkling' in row['variety'].lower():
-                    image_type = 'sparkling'
-                elif 'rosé' in row['variety'].lower() or 'rose' in row['variety'].lower():
-                    image_type = 'rose'
-                elif 'red' in row['variety'].lower() or 'blend' in row['variety'].lower():
-                    image_type = 'red'
-                else:
-                    image_type = 'white'
-
-                wine_image = load_image(wine_images[image_type])
-                if wine_image:
-                    st.image(wine_image, use_column_width=True)
-                else:
-                    st.markdown(f'<div class="wine-icon-fallback show">{get_wine_icon(row["variety"])}</div>', unsafe_allow_html=True)
-                
-                st.markdown(f"""
-                    <div class="wine-content">
-                        <div class="wine-price">${row['price']:,.2f}</div>
-                        <div class="wine-title">{row['title']}</div>
-                        <div class="wine-details">{row['variety']}</div>
-                        <div class="wine-details">{row['winery']}</div>
-                        <div class="wine-rating">Rating: {row['points']}/100</div>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                if st.button("View Details", key=f"view_details_{idx}"):
-                    st.session_state.selected_wine = row
-                    st.session_state.view_wine_details = True
-                    st.rerun()
-        
-        # Load More button
-        if st.session_state.wines_displayed < len(catalog_df):
-            st.markdown('<div style="text-align: center; padding: 2rem;">', unsafe_allow_html=True)
-            if st.button("Load More Wines"):
-                st.session_state.wines_displayed += 10
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-
-# Add Admin Dashboard tab content
-with tab8:
-    st.title("Admin Dashboard")
-    
-    if not st.session_state.is_admin:
-        st.subheader("Admin Login")
-        login_col1, login_col2 = st.columns(2)
-        
-        with login_col1:
-            st.subheader("Login")
+            st.markdown("### Login")
             login_username = st.text_input("Username", key="login_username")
             login_password = st.text_input("Password", type="password", key="login_password")
-            if st.button("Login", key="login_button"):
-                if check_login(login_username, login_password):
-                    st.session_state.is_admin = True
-                    st.session_state.admin_username = login_username
-                    st.success("Login successful!")
-                    time.sleep(1)
-                    st.rerun()
+            
+            if st.button("Login"):
+                success, message = check_user_login(login_username, login_password)
+                if success:
+                    st.session_state.user_logged_in = True
+                    st.session_state.current_user = login_username
+                    st.success(message)
                 else:
-                    st.error("Invalid username or password")
-        
-        with login_col2:
-            st.subheader("Create Admin Account")
-            new_username = st.text_input("New Username", key="new_username")
-            new_password = st.text_input("New Password", type="password", key="new_password")
-            confirm_password = st.text_input("Confirm Password", type="password", key="confirm_password")
-            if st.button("Create Account", key="create_account"):
-                if new_password != confirm_password:
-                    st.error("Passwords do not match")
-                else:
-                    success, message = create_admin_account(new_username, new_password)
-                    if success:
-                        st.success(message)
-                        time.sleep(1)
-                        st.rerun()
-                    else:
-                        st.error(message)
-    else:
-        # Admin Navigation
-        st.sidebar.title(f"Welcome, {st.session_state.admin_username}!")
-        
-        # Navigation Menu
-        admin_menu = st.sidebar.radio(
-            "Dashboard Navigation",
-            ["Overview", "Wine Management", "Discount Management", "Sales & Reports", "User Management", "Orders & Payments"]
+                    st.error(message)
+    
+    elif st.session_state.account_creation_step == 1:
+        st.markdown("### Step 1: Select Your Preferred Wine Types")
+        wine_types = st.multiselect(
+            "Choose your favorite wine types",
+            ["Red", "White", "Rosé", "Sparkling"],
+            key="setup_wine_types"
         )
         
-        if st.sidebar.button("Logout", key="logout"):
-            st.session_state.is_admin = False
-            st.session_state.admin_username = None
-            st.rerun()
-        
-        # Overview Section
-        if admin_menu == "Overview":
-            st.header("Dashboard Overview")
-            
-            # Key Metrics
-            metrics_cols = st.columns(4)
-            with metrics_cols[0]:
-                st.metric("Total Wines", len(df_wine_combi))
-            with metrics_cols[1]:
-                st.metric("Avg. Price", f"${df_wine_combi['price'].mean():.2f}")
-            with metrics_cols[2]:
-                st.metric("Avg. Rating", f"{df_wine_combi['points'].mean():.1f}")
-            with metrics_cols[3]:
-                st.metric("Total Revenue", "$127,890")  # Example static value
-            
-            # Charts Row
-            chart_cols = st.columns(2)
-            with chart_cols[0]:
-                st.subheader("Sales Trend")
-                # Create and style sales trend chart
-                sales_data = pd.DataFrame({
-                    'Month': ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-                    'Sales': [12000, 15000, 18000, 16000, 21000]
-                })
-                fig_sales = px.line(sales_data, x='Month', y='Sales', 
-                                  title='Monthly Sales Trend',
-                                  markers=True)
-                fig_sales.update_layout(
-                    plot_bgcolor='white',
-                    paper_bgcolor='white',
-                    font_color='#1B2B4B',
-                    title_font_color='#1B2B4B',
-                    title_font_family="Cormorant Garamond",
-                    title_font_size=24,
-                    margin=dict(t=50, l=50, r=30, b=50),
-                    yaxis=dict(
-                        title=dict(
-                            text='Sales ($)',
-                            font=dict(size=16, color='#1B2B4B')
-                        ),
-                        tickfont=dict(size=14, color='#1B2B4B'),
-                        tickprefix='$',
-                        gridcolor='#E8C7C3'
-                    ),
-                    xaxis=dict(
-                        title=dict(
-                            text='Month',
-                            font=dict(size=16, color='#1B2B4B')
-                        ),
-                        tickfont=dict(size=14, color='#1B2B4B'),
-                        gridcolor='#E8C7C3'
-                    ),
-                    height=400
-                )
-                fig_sales.update_traces(
-                    line=dict(color='#1B2B4B', width=3),
-                    marker=dict(
-                        color='#E8C7C3',
-                        size=10,
-                        line=dict(color='#1B2B4B', width=2)
-                    )
-                )
-                st.plotly_chart(fig_sales, use_container_width=True)
-            
-            with chart_cols[1]:
-                st.subheader("Top Wine Categories")
-                # Process the data to show only top varieties
-                variety_counts = df_wine_combi['variety'].value_counts()
-                top_10_varieties = variety_counts.head(10)
-                others_count = variety_counts[10:].sum()
-                
-                # Create a new series with top 10 and Others
-                plot_data = pd.concat([top_10_varieties, pd.Series({'Others': others_count})])
-                
-                # Create and style the pie chart
-                fig_category = px.pie(
-                    values=plot_data.values,
-                    names=plot_data.index,
-                    title='Top 10 Wine Categories',
-                    color_discrete_sequence=['#1B2B4B', '#0F1C33', '#E8C7C3', '#F5E6E4', '#B4A169', 
-                                          '#1B2B4B', '#0F1C33', '#E8C7C3', '#F5E6E4', '#B4A169', '#ADB5BD']
-                )
-                fig_category.update_layout(
-                    plot_bgcolor='white',
-                    paper_bgcolor='white',
-                    font_color='#1B2B4B',
-                    title_font_color='#1B2B4B',
-                    title_font_family="Cormorant Garamond",
-                    title_font_size=24,
-                    legend_font_family="Cormorant Garamond",
-                    legend=dict(
-                        orientation="h",
-                        yanchor="bottom",
-                        y=-0.5,
-                        xanchor="center",
-                        x=0.5
-                    ),
-                    height=500
-                )
-                fig_category.update_traces(
-                    textposition='inside',
-                    textinfo='percent+label',
-                    textfont_color='white',
-                    hole=0.3
-                )
-                st.plotly_chart(fig_category, use_container_width=True)
-
-            # Update metrics styling
-            st.markdown("""
-                <style>
-                [data-testid="stMetricValue"] {
-                    color: #722F37 !important;
-                    font-size: 2rem !important;
-                    font-weight: 600 !important;
-                }
-                [data-testid="stMetricLabel"] {
-                    color: #2C1810 !important;
-                    font-size: 1rem !important;
-                }
-                </style>
-            """, unsafe_allow_html=True)
-        
-        # Wine Management Section
-        elif admin_menu == "Wine Management":
-            st.header("Wine Management")
-            
-            # Add New Wine Form
-            with st.expander("Add New Wine"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.text_input("Wine Name", key="new_wine_name")
-                    st.text_input("Variety", key="new_wine_variety")
-                    st.text_input("Winery", key="new_wine_winery")
-                    st.number_input("Price ($)", min_value=0.0, key="new_wine_price")
-                with col2:
-                    st.text_input("Country", key="new_wine_country")
-                    st.text_input("Province", key="new_wine_province")
-                    st.number_input("Rating (0-100)", min_value=0, max_value=100, key="new_wine_rating")
-                    st.number_input("Stock", min_value=0, key="new_wine_stock")
-                st.text_area("Description", key="new_wine_description")
-                if st.button("Add Wine", key="add_wine"):
-                    st.success("Wine added successfully!")
-            
-            # Wine List with Edit/Delete Options
-            st.subheader("Manage Existing Wines")
-            wine_list = df_wine_combi[['title', 'variety', 'winery', 'price', 'points']].head(10)
-            edited_df = st.data_editor(
-                wine_list,
-                num_rows="dynamic",
-                use_container_width=True
-            )
-        
-        # Discount Management Section
-        elif admin_menu == "Discount Management":
-            st.header("Discount Management")
-            
-            # Add New Discount
-            with st.expander("Add New Discount"):
-                disc_col1, disc_col2 = st.columns(2)
-                with disc_col1:
-                    st.selectbox("Select Wine", df_wine_combi['title'].unique(), key="discount_wine")
-                    st.number_input("Discount Percentage", min_value=0, max_value=100, key="discount_percent")
-                with disc_col2:
-                    st.date_input("Start Date", key="discount_start")
-                    st.date_input("End Date", key="discount_end")
-                if st.button("Apply Discount", key="apply_discount"):
-                    st.success("Discount applied successfully!")
-            
-            # Active Discounts Table
-            st.subheader("Active Discounts")
-            example_discounts = pd.DataFrame({
-                'Wine': ['Wine A', 'Wine B', 'Wine C'],
-                'Discount': ['20%', '15%', '25%'],
-                'Start Date': ['2024-01-01', '2024-01-15', '2024-02-01'],
-                'End Date': ['2024-02-01', '2024-02-15', '2024-03-01'],
-                'Status': ['Active', 'Active', 'Upcoming']
-            })
-            st.dataframe(example_discounts, use_container_width=True)
-        
-        # Sales & Reports Section
-        elif admin_menu == "Sales & Reports":
-            st.header("Sales & Reports")
-            
-            # Date Range Filter
-            col1, col2 = st.columns(2)
-            with col1:
-                st.date_input("Start Date", key="sales_start_date")
-            with col2:
-                st.date_input("End Date", key="sales_end_date")
-            
-            # Sales Metrics
-            metrics_cols = st.columns(3)
-            with metrics_cols[0]:
-                st.metric("Total Sales", "$45,678")
-            with metrics_cols[1]:
-                st.metric("Orders", "234")
-            with metrics_cols[2]:
-                st.metric("Avg. Order Value", "$195.20")
-            
-            # Sales Charts
-            st.subheader("Sales Analytics")
-            chart_tabs = st.tabs(["Daily Sales", "Weekly Trend", "Monthly Revenue"])
-            
-            with chart_tabs[0]:
-                st.line_chart(np.random.randn(30, 1))
-            
-            with chart_tabs[1]:
-                st.bar_chart(np.random.randn(20, 1))
-            
-            with chart_tabs[2]:
-                st.area_chart(np.random.randn(12, 1))
-        
-        # User Management Section
-        elif admin_menu == "User Management":
-            st.header("User Management")
-            
-            # User Stats
-            user_cols = st.columns(3)
-            with user_cols[0]:
-                st.metric("Total Users", "1,234")
-            with user_cols[1]:
-                st.metric("Active Users", "892")
-            with user_cols[2]:
-                st.metric("New Users (This Month)", "+45")
-            
-            # User List
-            st.subheader("User List")
-            example_users = pd.DataFrame({
-                'Username': ['user1', 'user2', 'user3'],
-                'Email': ['user1@example.com', 'user2@example.com', 'user3@example.com'],
-                'Role': ['Admin', 'Staff', 'Customer'],
-                'Join Date': ['2024-01-01', '2024-01-15', '2024-02-01'],
-                'Status': ['Active', 'Active', 'Inactive']
-            })
-            st.data_editor(example_users, use_container_width=True)
-        
-        # Orders & Payments Section
-        elif admin_menu == "Orders & Payments":
-            st.header("Orders & Payments")
-            
-            # Order Stats
-            order_cols = st.columns(4)
-            with order_cols[0]:
-                st.metric("New Orders", "12")
-            with order_cols[1]:
-                st.metric("Processing", "8")
-            with order_cols[2]:
-                st.metric("Shipped", "15")
-            with order_cols[3]:
-                st.metric("Delivered", "45")
-            
-            # Recent Orders
-            st.subheader("Recent Orders")
-            
-            # Define payment columns first
-            payment_cols = st.columns(2)
-            
-            if st.session_state.orders:
-                # Create DataFrame with only serializable columns
-                orders_df = pd.DataFrame([{
-                    'order_id': order['order_id'],
-                    'customer': order['customer'],
-                    'amount': order['amount'],
-                    'status': order['status'],
-                    'date': order['date']
-                } for order in st.session_state.orders])
-                st.dataframe(orders_df, use_container_width=True)
-                
-                # Update Order Stats
-                total_revenue = sum(order['amount'] for order in st.session_state.orders)
-                processing_orders = len([order for order in st.session_state.orders if order['status'] == 'Processing'])
-                shipped_orders = len([order for order in st.session_state.orders if order['status'] == 'Shipped'])
-                delivered_orders = len([order for order in st.session_state.orders if order['status'] == 'Delivered'])
-                
-                with order_cols[0]:
-                    st.metric("New Orders", len(st.session_state.orders))
-                with order_cols[1]:
-                    st.metric("Processing", processing_orders)
-                with order_cols[2]:
-                    st.metric("Shipped", shipped_orders)
-                with order_cols[3]:
-                    st.metric("Delivered", delivered_orders)
-                
-                # Update Payment Analytics
-                with payment_cols[0]:
-                    st.metric("Total Revenue", f"${total_revenue:,.2f}")
-                    st.metric("Pending Payments", f"${total_revenue:,.2f}")
-                with payment_cols[1]:
-                    st.metric("Refunds", "$0.00")
-                    st.metric("Average Order Value", f"${total_revenue/len(st.session_state.orders):,.2f}")
+        if st.button("Next", key="next_step1"):
+            if wine_types:
+                st.session_state.account_creation_step = 2
             else:
-                st.info("No orders have been placed yet.")
+                st.warning("Please select at least one wine type")
+    
+    elif st.session_state.account_creation_step == 2:
+        st.markdown("### Step 2: Select Your Preferred Wine Traits")
+        traits = st.multiselect(
+            "Choose your preferred wine traits",
+            all_traits,
+            key="setup_traits"
+        )
+        
+        if st.button("Complete Setup", key="complete_setup"):
+            if traits:
+                success, message = update_user_preferences(
+                    st.session_state.current_user,
+                    st.session_state.pref_wine_types,
+                    traits
+                )
+                if success:
+                    st.session_state.account_creation_step = 3
+                    st.success("Preferences saved successfully!")
+                else:
+                    st.error(message)
+            else:
+                st.warning("Please select at least one trait")
+    
+    elif st.session_state.account_creation_step == 3:
+        st.success("Account setup complete! You can now start shopping.")
+        if st.button("Start Shopping", key="start_shopping"):
+            st.session_state.account_creation_step = 4
+    
+    else:
+        if not st.session_state.cart:
+            st.info("Your cart is empty")
+        else:
+            for item in st.session_state.cart:
+                st.markdown(f"""
+                    <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;'>
+                        <h3 style='color: #2C1810;'>{item['title']}</h3>
+                        <p style='color: #B4A169; font-weight: 600;'>${item['price']}</p>
+                        <p style='color: #495057;'>{item['variety']} • {item['country']}</p>
+                    </div>
+                """, unsafe_allow_html=True)
             
-            # Payment Analytics
-            st.subheader("Payment Analytics")
-            with payment_cols[0]:
-                st.metric("Total Revenue", "$12,456")
-                st.metric("Pending Payments", "$890")
-            with payment_cols[1]:
-                st.metric("Refunds", "$234")
-                st.metric("Average Order Value", "$245")
+            st.markdown(f"""
+                <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                    <h2 style='color: #2C1810;'>Total: ${st.session_state.cart_total:.2f}</h2>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("Proceed to Checkout"):
+                st.success("Thank you for your order!")
+                st.session_state.cart = []
+                st.session_state.cart_total = 0.0
 
-def load_image(image_path):
-    try:
-        return Image.open(image_path)
-    except Exception as e:
-        st.error(f"Error loading image: {e}")
-        return None
+# Admin Dashboard Section
+with tab8:
+    st.markdown("""
+        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Admin Dashboard</h1>
+        </div>
+    """, unsafe_allow_html=True)
+
+    if not st.session_state.is_admin:
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Login"):
+                if check_login(username, password):
+                    st.session_state.is_admin = True
+                    st.success("Successfully logged in!")
+                else:
+                    st.error("Invalid credentials")
+        
+        with col2:
+            if st.button("Create Admin Account"):
+                if username and password:
+                    success, message = create_admin_account(username, password)
+                    if success:
+                        st.success(message)
+                    else:
+                        st.error(message)
+                else:
+                    st.error("Please enter both username and password")
+    
+    else:
+        # Display admin dashboard content
+        st.markdown("""
+            <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                <h2 style='color: #2C1810;'>Recent Orders</h2>
+            </div>
+        """, unsafe_allow_html=True)
+
+        # Display orders if any
+        if st.session_state.orders:
+            for order in st.session_state.orders:
+                st.markdown(f"""
+                    <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;'>
+                        <h3 style='color: #2C1810;'>Order #{order['order_id']}</h3>
+                        <p style='color: #495057;'>Customer: {order['customer']}</p>
+                        <p style='color: #495057;'>Amount: ${order['amount']:.2f}</p>
+                        <p style='color: #495057;'>Status: {order['status']}</p>
+                        <p style='color: #495057;'>Date: {order['date']}</p>
+                    </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("No orders yet")
+
+        if st.button("Logout"):
+            st.session_state.is_admin = False
+            st.success("Successfully logged out!")
