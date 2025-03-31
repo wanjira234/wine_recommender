@@ -12,24 +12,108 @@ import json
 import plotly.express as px
 import plotly.figure_factory as ff
 from datetime import datetime
+import tornado.websocket
+import tornado.ioloop
+import tornado.web
+import asyncio
 
-# Initialize all session state variables
-if 'user_logged_in' not in st.session_state:
-    st.session_state.user_logged_in = False
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = None
-if 'account_creation_step' not in st.session_state:
-    st.session_state.account_creation_step = 1
-if 'is_admin' not in st.session_state:
-    st.session_state.is_admin = False
-if 'wines_displayed' not in st.session_state:
-    st.session_state.wines_displayed = 10
-if 'cart' not in st.session_state:
-    st.session_state.cart = []
-if 'cart_total' not in st.session_state:
-    st.session_state.cart_total = 0.0
-if 'orders' not in st.session_state:
-    st.session_state.orders = []
+# Add WebSocket error handling
+class WebSocketHandler(tornado.websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        return True  # Allow all origins in development
+    
+    def on_error(self, error):
+        st.error(f"WebSocket error: {error}")
+    
+    def on_close(self, code=None, reason=None):
+        st.warning("WebSocket connection closed")
+        # Attempt to reconnect
+        asyncio.create_task(self.reconnect())
+    
+    async def reconnect(self):
+        try:
+            await asyncio.sleep(1)
+            self.connect()
+        except Exception as e:
+            st.error(f"Reconnection failed: {e}")
+
+# Add caching for expensive operations
+@st.cache_data
+def load_wine_data():
+    try:
+        df_wine_model = pd.read_pickle('data/df_wine_us_rate.pkl')
+        df_wine_combi = pd.read_pickle('data/df_wine_combi.pkl')
+        return df_wine_model, df_wine_combi
+    except Exception as e:
+        st.error(f"Error loading wine data: {e}")
+        return None, None
+
+@st.cache_data
+def load_wine_images():
+    try:
+        return {
+            'red': 'images/red-wine.jpg',
+            'white': 'images/white-wine.jpg',
+            'rose': 'images/rose-wine.jpg',
+            'sparkling': 'images/sparkling-wine.jpg'
+        }
+    except Exception as e:
+        st.error(f"Error loading wine images: {e}")
+        return {}
+
+@st.cache_data
+def load_image(image_path):
+    try:
+        return Image.open(image_path)
+    except Exception as e:
+        st.error(f"Error loading image: {e}")
+        return None
+
+# Initialize session state variables with error handling
+def init_session_state():
+    try:
+        if 'user_logged_in' not in st.session_state:
+            st.session_state.user_logged_in = False
+        if 'current_user' not in st.session_state:
+            st.session_state.current_user = None
+        if 'account_creation_step' not in st.session_state:
+            st.session_state.account_creation_step = 1
+        if 'is_admin' not in st.session_state:
+            st.session_state.is_admin = False
+        if 'wines_displayed' not in st.session_state:
+            st.session_state.wines_displayed = 10
+        if 'cart' not in st.session_state:
+            st.session_state.cart = []
+        if 'cart_total' not in st.session_state:
+            st.session_state.cart_total = 0.0
+        if 'orders' not in st.session_state:
+            st.session_state.orders = []
+    except Exception as e:
+        st.error(f"Error initializing session state: {e}")
+
+# Initialize session state
+init_session_state()
+
+# Load data only when needed with error handling
+try:
+    df_wine_model, df_wine_combi = load_wine_data()
+    wine_images = load_wine_images()
+except Exception as e:
+    st.error(f"Error loading application data: {e}")
+    df_wine_model, df_wine_combi = None, None
+    wine_images = {}
+
+# Define wine traits
+all_traits = ['almond', 'anise', 'apple', 'apricot', 'baked', 'baking_spices', 'berry', 'black_cherry', 'black_currant', 'black_pepper', 'black_tea', 'blackberry', 'blueberry', 
+              'boysenberry', 'bramble', 'bright', 'butter', 'candy', 'caramel', 'cardamom', 'cassis', 'cedar', 'chalk', 'cherry', 'chocolate', 'cinnamon', 'citrus', 'clean', 'closed',
+              'clove', 'cocoa', 'coffee', 'cola', 'complex', 'concentrated', 'cranberry', 'cream', 'crisp', 'dark', 'dark_chocolate', 'dense', 'depth', 'dried_herb', 'dry', 'dust',
+              'earth', 'edgy', 'elderberry', 'elegant', 'fennel', 'firm', 'flower', 'forest_floor', 'french_oak', 'fresh', 'fruit', 'full_bodied', 'game', 'grapefruit', 'graphite',
+              'green', 'gripping', 'grippy', 'hearty', 'herb', 'honey', 'honeysuckle', 'jam', 'juicy', 'lavender', 'leafy', 'lean', 'leather', 'lemon', 'lemon_peel', 'length', 'licorice',
+              'light_bodied', 'lime', 'lush', 'meaty', 'medium_bodied', 'melon', 'milk_chocolate', 'minerality', 'mint', 'nutmeg', 'oak', 'olive', 'orange', 'orange_peel', 'peach',
+              'pear', 'pencil_lead', 'pepper', 'pine', 'pineapple', 'plum', 'plush', 'polished', 'pomegranate', 'powerful', 'purple', 'purple_flower', 'raspberry', 'refreshing',
+              'restrained', 'rich', 'ripe', 'robust', 'rose', 'round', 'sage', 'salt', 'savory', 'sharp', 'silky', 'smoke', 'smoked_meat', 'smooth', 'soft', 'sparkling', 'spice',
+              'steel', 'stone', 'strawberry', 'succulent', 'supple', 'sweet', 'tangy', 'tannin', 'tar', 'tart', 'tea', 'thick', 'thyme', 'tight', 'toast', 'tobacco', 'tropical_fruit',
+              'vanilla', 'velvety', 'vibrant', 'violet', 'warm', 'weight', 'wet_rocks', 'white', 'white_pepper', 'wood']
 
 # User data functions
 def load_user_data():
@@ -80,13 +164,6 @@ def update_user_preferences(username, wine_types, traits):
     save_user_data(user_data)
     return True, "Preferences updated successfully"
 
-def load_image(image_path):
-    try:
-        return Image.open(image_path)
-    except Exception as e:
-        st.error(f"Error loading image: {e}")
-        return None
-
 def get_wine_icon(variety):
     variety = variety.lower()
     if 'sparkling' in variety:
@@ -97,18 +174,6 @@ def get_wine_icon(variety):
         return '<i class="fa-solid fa-wine-glass"></i>'
     else:
         return '<i class="fa-solid fa-wine-bottle"></i>'
-
-# Import wine dataframes
-df_wine_model = pd.read_pickle('data/df_wine_us_rate.pkl')
-df_wine_combi = pd.read_pickle('data/df_wine_combi.pkl')
-
-# Load wine images
-wine_images = {
-    'red': 'images/red-wine.jpg',
-    'white': 'images/white-wine.jpg',
-    'rose': 'images/rose-wine.jpg',
-    'sparkling': 'images/sparkling-wine.jpg'
-}
 
 # Admin credentials file
 ADMIN_FILE = 'admin_credentials.json'
@@ -874,465 +939,476 @@ set_custom_theme()
 
 # Function to instantiate the model & return the est recsys scores
 def recommend_scores():
-    
-    # Instantiate reader & data for surprise
-    reader = Reader(rating_scale=(88, 100))
-    data = Dataset.load_from_df(df_wine_model, reader)
-    
-    # Instantiate recsys model
-    sim_options={'name':'cosine'}
-    model = KNNBaseline(k=35, min_k=1, sim_options=sim_options, verbose=False)
-
-    # Train & fit the data into model
-    train=data.build_full_trainset()
-    model.fit(train)
-
-    # Start the model to compute the best estimate match score on wine list
-    recommend_list = []
-    user_wines = df_wine_model[df_wine_model.taster_name == 'mockuser']['title'].unique()
-    not_user_wines = []
-    
-    for wine in df_wine_model['title'].unique():
-        if wine not in user_wines:
-            not_user_wines.append(wine)
-
-    for wine in not_user_wines:
-        wine_compatibility = []
-        prediction = model.predict(uid='mockuser', iid=wine)
-        wine_compatibility.append(prediction.iid)
-        wine_compatibility.append(prediction.est)
-        recommend_list.append(wine_compatibility)
+    try:
+        # Instantiate reader & data for surprise
+        reader = Reader(rating_scale=(88, 100))
+        data = Dataset.load_from_df(df_wine_model, reader)
         
-    result_df = pd.DataFrame(recommend_list, columns = ['title', 'est_match_pts'])
-    
-    return result_df
+        # Instantiate recsys model
+        sim_options={'name':'cosine'}
+        model = KNNBaseline(k=35, min_k=1, sim_options=sim_options, verbose=False)
 
-# Function for background image
+        # Train & fit the data into model
+        train=data.build_full_trainset()
+        model.fit(train)
+
+        # Start the model to compute the best estimate match score on wine list
+        recommend_list = []
+        user_wines = df_wine_model[df_wine_model.taster_name == 'mockuser']['title'].unique()
+        not_user_wines = []
+        
+        for wine in df_wine_model['title'].unique():
+            if wine not in user_wines:
+                not_user_wines.append(wine)
+
+        for wine in not_user_wines:
+            try:
+                wine_compatibility = []
+                prediction = model.predict(uid='mockuser', iid=wine)
+                wine_compatibility.append(prediction.iid)
+                wine_compatibility.append(prediction.est)
+                recommend_list.append(wine_compatibility)
+            except Exception as e:
+                st.warning(f"Error predicting for wine {wine}: {e}")
+                continue
+        
+        result_df = pd.DataFrame(recommend_list, columns = ['title', 'est_match_pts'])
+        return result_df
+    except Exception as e:
+        st.error(f"Error in recommend_scores: {e}")
+        return pd.DataFrame(columns=['title', 'est_match_pts'])
+
+# Function for background image with error handling
 def add_bg_from_url():
-    st.markdown(
-        f"""
-        <style>
-        
-        [data-testid="stAppViewContainer"] {{
-        background-image: url("images/learn-more.jpg");
-        background-attachment: fixed;
-        background-size: cover      
-        }}
-        
-        [data-testid="stVerticalBlock"] {{
-        background-color: rgba(255,255,255,0.5)
-        }}
-        
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    try:
+        st.markdown(
+            f"""
+            <style>
+            
+            [data-testid="stAppViewContainer"] {{
+            background-image: url("images/learn-more.jpg");
+            background-attachment: fixed;
+            background-size: cover      
+            }}
+            
+            [data-testid="stVerticalBlock"] {{
+            background-color: rgba(255,255,255,0.5)
+            }}
+            
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+    except Exception as e:
+        st.error(f"Error setting background: {e}")
 
-#----------------------------------------------------------------------------------------------------------
-
-# Create plotly charts with theme
+# Create plotly charts with theme and error handling
 def create_plotly_chart(df, x, title, xlabel, ylabel="Number of Wines", nbins=50):
-    fig = px.histogram(df, x=x, nbins=nbins,
-                      title=title,
-                      labels={x: xlabel, 'count': ylabel})
-    
-    fig.update_layout(
-        plot_bgcolor='#2d2d2d',
-        paper_bgcolor='#2d2d2d',
-        font_color='#E5E5E5',
-        title_font_color='#FFD700',
-        showlegend=False,
-        title_font_family="Playfair Display",
-        title_font_size=24,
-    )
-    
-    fig.update_xaxes(gridcolor='#404040', tickfont_color='#E5E5E5')
-    fig.update_yaxes(gridcolor='#404040', tickfont_color='#E5E5E5')
-    
-    return fig
-
-# Create tabs for different sections
-tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(["Home", "About Us", "Learn", "Contact", "Wine Recommender", "Wine Catalog", "Shopping Cart", "Admin Dashboard"])
-
-# Home Section
-with tab1:
-    # Hero Section with learn-more.jpg background
-    hero_image = load_image('images/learn-more.jpg')
-    if hero_image:
-        st.image(hero_image, use_container_width=True)
-    
-    st.markdown("""
-        <h1 style="text-align: center; font-size: 4rem; margin-bottom: 1rem; font-family: 'Playfair Display', serif; color: #2C1810;">Welcome to WineWise</h1>
-    """, unsafe_allow_html=True)
-
-    featured_cols = st.columns(2)
-    with featured_cols[0]:
-        red_wine_image = load_image('images/red-wine.jpg')
-        if red_wine_image:
-            st.image(red_wine_image, caption="Premium Red Wines", use_container_width=True)
+    try:
+        fig = px.histogram(df, x=x, nbins=nbins,
+                          title=title,
+                          labels={x: xlabel, 'count': ylabel})
         
-        rose_wine_image = load_image('images/rose-wine.jpg')
-        if rose_wine_image:
-            st.image(rose_wine_image, caption="Rosé Collection", use_container_width=True)
-    
-    with featured_cols[1]:
-        white_wine_image = load_image('images/white-wine.jpg')
-        if white_wine_image:
-            st.image(white_wine_image, caption="White Wine Selection", use_container_width=True)
+        fig.update_layout(
+            plot_bgcolor='#2d2d2d',
+            paper_bgcolor='#2d2d2d',
+            font_color='#E5E5E5',
+            title_font_color='#FFD700',
+            showlegend=False,
+            title_font_family="Playfair Display",
+            title_font_size=24,
+        )
         
-        sparkling_wine_image = load_image('images/sparkling-wine.jpg')
-        if sparkling_wine_image:
-            st.image(sparkling_wine_image, caption="Sparkling Wines", use_container_width=True)
+        fig.update_xaxes(gridcolor='#404040', tickfont_color='#E5E5E5')
+        fig.update_yaxes(gridcolor='#404040', tickfont_color='#E5E5E5')
+        
+        return fig
+    except Exception as e:
+        st.error(f"Error creating plot: {e}")
+        return None
 
-# About Us Section
-with tab2:
-    st.markdown("""
-        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>About WineWise</h1>
+# Main application logic with error handling
+def main():
+    try:
+        # Create tabs for different sections
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(["Home", "About Us", "Learn", "Contact", "Wine Recommender", "Wine Catalog", "Shopping Cart", "Admin Dashboard"])
+
+        # Home Section
+        with tab1:
+            # Hero Section with learn-more.jpg background
+            hero_image = load_image('images/learn-more.jpg')
+            if hero_image:
+                st.image(hero_image, use_container_width=True)
             
-            <h2 style='color: #2C1810; margin-bottom: 1rem;'>Our Story</h2>
-            <p style='color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
-                WineWise was founded with a passion for connecting wine enthusiasts with their perfect bottle. 
-                Our sophisticated recommendation system combines expert knowledge with advanced technology to 
-                provide personalized wine suggestions tailored to your unique taste preferences.
-            </p>
+            st.markdown("""
+                <h1 style="text-align: center; font-size: 4rem; margin-bottom: 1rem; font-family: 'Playfair Display', serif; color: #2C1810;">Welcome to WineWise</h1>
+            """, unsafe_allow_html=True)
 
-            <h2 style='color: #2C1810; margin-bottom: 1rem;'>Our Mission</h2>
-            <p style='color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
-                We strive to make the world of wine accessible to everyone, from novices to connoisseurs. 
-                Through our carefully curated selection and intelligent recommendations, we help you discover 
-                wines that perfectly match your palate and preferences.
-            </p>
-
-            <h2 style='color: #2C1810; margin-bottom: 1rem;'>Why Choose Us</h2>
-            <ul style='color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
-                <li>Expert-curated wine selection</li>
-                <li>Personalized recommendations</li>
-                <li>Educational resources and wine knowledge</li>
-                <li>Secure shopping experience</li>
-                <li>Exceptional customer service</li>
-            </ul>
-        </div>
-    """, unsafe_allow_html=True)
-
-# Learn Section
-with tab3:
-    st.markdown("""
-        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Learn About Wine</h1>
-        </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("""
-            <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-                <h2 style='color: #2C1810; margin-bottom: 1rem;'>Wine Basics</h2>
-                <ul style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
-                    <li>Understanding Wine Types</li>
-                    <li>Wine Tasting Techniques</li>
-                    <li>Food and Wine Pairing</li>
-                    <li>Wine Storage Tips</li>
-                    <li>Reading Wine Labels</li>
-                </ul>
-            </div>
-        """, unsafe_allow_html=True)
-
-    with col2:
-        st.markdown("""
-            <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-                <h2 style='color: #2C1810; margin-bottom: 1rem;'>Advanced Topics</h2>
-                <ul style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
-                    <li>Wine Regions</li>
-                    <li>Winemaking Process</li>
-                    <li>Wine Investment</li>
-                    <li>Vintage Guides</li>
-                    <li>Wine Certification</li>
-                </ul>
-            </div>
-        """, unsafe_allow_html=True)
-
-# Contact Section
-with tab4:
-    st.markdown("""
-        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Contact Us</h1>
-        </div>
-    """, unsafe_allow_html=True)
-
-    contact_col1, contact_col2 = st.columns(2)
-
-    with contact_col1:
-        st.markdown("""
-            <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-                <h2 style='color: #2C1810; margin-bottom: 1rem;'>Get in Touch</h2>
-                <form>
-                    <div style='margin-bottom: 1rem;'>
-                        <label style='display: block; margin-bottom: 0.5rem; color: #2C1810;'>Name</label>
-                        <input type='text' style='width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #dee2e6;'>
-                    </div>
-                    <div style='margin-bottom: 1rem;'>
-                        <label style='display: block; margin-bottom: 0.5rem; color: #2C1810;'>Email</label>
-                        <input type='email' style='width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #dee2e6;'>
-                    </div>
-                    <div style='margin-bottom: 1rem;'>
-                        <label style='display: block; margin-bottom: 0.5rem; color: #2C1810;'>Message</label>
-                        <textarea style='width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #dee2e6; height: 150px;'></textarea>
-                    </div>
-                </form>
-            </div>
-        """, unsafe_allow_html=True)
-        st.button("Send Message")
-
-    with contact_col2:
-        st.markdown("""
-            <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-                <h2 style='color: #2C1810; margin-bottom: 1rem;'>Support Hours</h2>
-                <p style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
-                    Monday - Friday: 9:00 AM - 6:00 PM<br>
-                    Saturday: 10:00 AM - 4:00 PM<br>
-                    Sunday: Closed
-                </p>
+            featured_cols = st.columns(2)
+            with featured_cols[0]:
+                red_wine_image = load_image('images/red-wine.jpg')
+                if red_wine_image:
+                    st.image(red_wine_image, caption="Premium Red Wines", use_container_width=True)
                 
-                <h2 style='color: #2C1810; margin: 1.5rem 0 1rem;'>Contact Information</h2>
-                <p style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
-                    Email: support@winewise.com<br>
-                    Phone: (555) 123-4567<br>
-                    Address: 123 Wine Street, Vintage Valley, CA 90210
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
-
-# Wine Recommender Section
-with tab5:
-    st.markdown("""
-        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Wine Recommender</h1>
-            <p style='text-align: center; color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
-                Get personalized wine recommendations based on your preferences
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Add your existing wine recommendation logic here
-    st.write("Select your wine preferences:")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        price_range = st.slider("Price Range ($)", 0, 500, (20, 100), key="recommender_price")
-        wine_type = st.multiselect("Wine Type", ["Red", "White", "Rosé", "Sparkling"], key="recommender_wine_type")
-    
-    with col2:
-        rating_min = st.slider("Minimum Rating", 80, 100, 85, key="recommender_rating")
-        country = st.multiselect("Country", df_wine_combi['country'].unique().tolist(), key="recommender_country")
-
-    if st.button("Get Recommendations"):
-        st.write("Based on your preferences, here are our recommendations:")
-        # Add your recommendation display logic here
-
-# Wine Catalog Section
-with tab6:
-    st.markdown("""
-        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Wine Catalog</h1>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Add search and filter options
-    search = st.text_input("Search wines by name, variety, or winery")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        price_filter = st.slider("Price Range ($)", 0, 500, (0, 500), key="catalog_price")
-    with col2:
-        variety_filter = st.multiselect("Variety", df_wine_combi['variety'].unique().tolist(), key="catalog_variety")
-    with col3:
-        country_filter = st.multiselect("Country", df_wine_combi['country'].unique().tolist(), key="catalog_country")
-
-    # Display wine catalog
-    filtered_wines = df_wine_combi  # Add your filtering logic here
-    st.write(f"Showing {len(filtered_wines)} wines")
-    
-    # Display wines in a grid
-    for i in range(0, len(filtered_wines), 3):
-        cols = st.columns(3)
-        for j in range(3):
-            if i + j < len(filtered_wines):
-                with cols[j]:
-                    wine = filtered_wines.iloc[i + j]
-                    st.markdown(f"""
-                        <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                            <h3 style='color: #2C1810;'>{wine['title']}</h3>
-                            <p style='color: #B4A169; font-weight: 600;'>${wine['price']}</p>
-                            <p style='color: #495057;'>{wine['variety']} • {wine['country']}</p>
-                            <p style='color: #495057;'>{wine['points']} points</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-
-# Shopping Cart Section
-with tab7:
-    st.markdown("""
-        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Shopping Cart</h1>
-        </div>
-    """, unsafe_allow_html=True)
-
-    if not st.session_state.user_logged_in:
-        st.warning("Please create an account or log in to access the shopping cart")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("### Create Account")
-            new_username = st.text_input("Username", key="new_username")
-            new_password = st.text_input("Password", type="password", key="new_password")
-            new_email = st.text_input("Email", key="new_email")
-            new_name = st.text_input("Full Name", key="new_name")
+                rose_wine_image = load_image('images/rose-wine.jpg')
+                if rose_wine_image:
+                    st.image(rose_wine_image, caption="Rosé Collection", use_container_width=True)
             
-            if st.button("Create Account"):
-                success, message = create_user_account(new_username, new_password, new_email, new_name)
-                if success:
-                    st.session_state.user_logged_in = True
-                    st.session_state.current_user = new_username
-                    st.success(message)
-                else:
-                    st.error(message)
-        
-        with col2:
-            st.markdown("### Login")
-            login_username = st.text_input("Username", key="login_username")
-            login_password = st.text_input("Password", type="password", key="login_password")
-            
-            if st.button("Login"):
-                success, message = check_user_login(login_username, login_password)
-                if success:
-                    st.session_state.user_logged_in = True
-                    st.session_state.current_user = login_username
-                    st.success(message)
-                else:
-                    st.error(message)
-    
-    elif st.session_state.account_creation_step == 1:
-        st.markdown("### Step 1: Select Your Preferred Wine Types")
-        wine_types = st.multiselect(
-            "Choose your favorite wine types",
-            ["Red", "White", "Rosé", "Sparkling"],
-            key="setup_wine_types"
-        )
-        
-        if st.button("Next", key="next_step1"):
-            if wine_types:
-                st.session_state.account_creation_step = 2
-            else:
-                st.warning("Please select at least one wine type")
-    
-    elif st.session_state.account_creation_step == 2:
-        st.markdown("### Step 2: Select Your Preferred Wine Traits")
-        traits = st.multiselect(
-            "Choose your preferred wine traits",
-            all_traits,
-            key="setup_traits"
-        )
-        
-        if st.button("Complete Setup", key="complete_setup"):
-            if traits:
-                success, message = update_user_preferences(
-                    st.session_state.current_user,
-                    st.session_state.pref_wine_types,
-                    traits
-                )
-                if success:
-                    st.session_state.account_creation_step = 3
-                    st.success("Preferences saved successfully!")
-                else:
-                    st.error(message)
-            else:
-                st.warning("Please select at least one trait")
-    
-    elif st.session_state.account_creation_step == 3:
-        st.success("Account setup complete! You can now start shopping.")
-        if st.button("Start Shopping", key="start_shopping"):
-            st.session_state.account_creation_step = 4
-    
-    else:
-        if not st.session_state.cart:
-            st.info("Your cart is empty")
-        else:
-            for item in st.session_state.cart:
-                st.markdown(f"""
-                    <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;'>
-                        <h3 style='color: #2C1810;'>{item['title']}</h3>
-                        <p style='color: #B4A169; font-weight: 600;'>${item['price']}</p>
-                        <p style='color: #495057;'>{item['variety']} • {item['country']}</p>
-                    </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown(f"""
-                <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                    <h2 style='color: #2C1810;'>Total: ${st.session_state.cart_total:.2f}</h2>
+            with featured_cols[1]:
+                white_wine_image = load_image('images/white-wine.jpg')
+                if white_wine_image:
+                    st.image(white_wine_image, caption="White Wine Selection", use_container_width=True)
+                
+                sparkling_wine_image = load_image('images/sparkling-wine.jpg')
+                if sparkling_wine_image:
+                    st.image(sparkling_wine_image, caption="Sparkling Wines", use_container_width=True)
+
+        # About Us Section
+        with tab2:
+            st.markdown("""
+                <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                    <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>About WineWise</h1>
+                    
+                    <h2 style='color: #2C1810; margin-bottom: 1rem;'>Our Story</h2>
+                    <p style='color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
+                        WineWise was founded with a passion for connecting wine enthusiasts with their perfect bottle. 
+                        Our sophisticated recommendation system combines expert knowledge with advanced technology to 
+                        provide personalized wine suggestions tailored to your unique taste preferences.
+                    </p>
+
+                    <h2 style='color: #2C1810; margin-bottom: 1rem;'>Our Mission</h2>
+                    <p style='color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
+                        We strive to make the world of wine accessible to everyone, from novices to connoisseurs. 
+                        Through our carefully curated selection and intelligent recommendations, we help you discover 
+                        wines that perfectly match your palate and preferences.
+                    </p>
+
+                    <h2 style='color: #2C1810; margin-bottom: 1rem;'>Why Choose Us</h2>
+                    <ul style='color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
+                        <li>Expert-curated wine selection</li>
+                        <li>Personalized recommendations</li>
+                        <li>Educational resources and wine knowledge</li>
+                        <li>Secure shopping experience</li>
+                        <li>Exceptional customer service</li>
+                    </ul>
                 </div>
             """, unsafe_allow_html=True)
-            
-            if st.button("Proceed to Checkout"):
-                st.success("Thank you for your order!")
-                st.session_state.cart = []
-                st.session_state.cart_total = 0.0
 
-# Admin Dashboard Section
-with tab8:
-    st.markdown("""
-        <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
-            <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Admin Dashboard</h1>
-        </div>
-    """, unsafe_allow_html=True)
+        # Learn Section
+        with tab3:
+            st.markdown("""
+                <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                    <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Learn About Wine</h1>
+                </div>
+            """, unsafe_allow_html=True)
 
-    if not st.session_state.is_admin:
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Login"):
-                if check_login(username, password):
-                    st.session_state.is_admin = True
-                    st.success("Successfully logged in!")
-                else:
-                    st.error("Invalid credentials")
-        
-        with col2:
-            if st.button("Create Admin Account"):
-                if username and password:
-                    success, message = create_admin_account(username, password)
-                    if success:
-                        st.success(message)
-                    else:
-                        st.error(message)
-                else:
-                    st.error("Please enter both username and password")
-    
-    else:
-        # Display admin dashboard content
-        st.markdown("""
-            <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <h2 style='color: #2C1810;'>Recent Orders</h2>
-            </div>
-        """, unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
 
-        # Display orders if any
-        if st.session_state.orders:
-            for order in st.session_state.orders:
-                st.markdown(f"""
-                    <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;'>
-                        <h3 style='color: #2C1810;'>Order #{order['order_id']}</h3>
-                        <p style='color: #495057;'>Customer: {order['customer']}</p>
-                        <p style='color: #495057;'>Amount: ${order['amount']:.2f}</p>
-                        <p style='color: #495057;'>Status: {order['status']}</p>
-                        <p style='color: #495057;'>Date: {order['date']}</p>
+            with col1:
+                st.markdown("""
+                    <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                        <h2 style='color: #2C1810; margin-bottom: 1rem;'>Wine Basics</h2>
+                        <ul style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
+                            <li>Understanding Wine Types</li>
+                            <li>Wine Tasting Techniques</li>
+                            <li>Food and Wine Pairing</li>
+                            <li>Wine Storage Tips</li>
+                            <li>Reading Wine Labels</li>
+                        </ul>
                     </div>
                 """, unsafe_allow_html=True)
-        else:
-            st.info("No orders yet")
 
-        if st.button("Logout"):
-            st.session_state.is_admin = False
-            st.success("Successfully logged out!")
+            with col2:
+                st.markdown("""
+                    <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                        <h2 style='color: #2C1810; margin-bottom: 1rem;'>Advanced Topics</h2>
+                        <ul style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
+                            <li>Wine Regions</li>
+                            <li>Winemaking Process</li>
+                            <li>Wine Investment</li>
+                            <li>Vintage Guides</li>
+                            <li>Wine Certification</li>
+                        </ul>
+                    </div>
+                """, unsafe_allow_html=True)
+
+        # Contact Section
+        with tab4:
+            st.markdown("""
+                <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                    <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Contact Us</h1>
+                </div>
+            """, unsafe_allow_html=True)
+
+            contact_col1, contact_col2 = st.columns(2)
+
+            with contact_col1:
+                st.markdown("""
+                    <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                        <h2 style='color: #2C1810; margin-bottom: 1rem;'>Get in Touch</h2>
+                        <form>
+                            <div style='margin-bottom: 1rem;'>
+                                <label style='display: block; margin-bottom: 0.5rem; color: #2C1810;'>Name</label>
+                                <input type='text' style='width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #dee2e6;'>
+                            </div>
+                            <div style='margin-bottom: 1rem;'>
+                                <label style='display: block; margin-bottom: 0.5rem; color: #2C1810;'>Email</label>
+                                <input type='email' style='width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #dee2e6;'>
+                            </div>
+                            <div style='margin-bottom: 1rem;'>
+                                <label style='display: block; margin-bottom: 0.5rem; color: #2C1810;'>Message</label>
+                                <textarea style='width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #dee2e6; height: 150px;'></textarea>
+                            </div>
+                        </form>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.button("Send Message")
+
+            with contact_col2:
+                st.markdown("""
+                    <div style='padding: 1rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                        <h2 style='color: #2C1810; margin-bottom: 1rem;'>Support Hours</h2>
+                        <p style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
+                            Monday - Friday: 9:00 AM - 6:00 PM<br>
+                            Saturday: 10:00 AM - 4:00 PM<br>
+                            Sunday: Closed
+                        </p>
+                        
+                        <h2 style='color: #2C1810; margin: 1.5rem 0 1rem;'>Contact Information</h2>
+                        <p style='color: #495057; font-size: 1.1rem; line-height: 1.6;'>
+                            Email: support@winewise.com<br>
+                            Phone: (555) 123-4567<br>
+                            Address: 123 Wine Street, Vintage Valley, CA 90210
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+
+        # Wine Recommender Section
+        with tab5:
+            st.markdown("""
+                <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                    <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Wine Recommender</h1>
+                    <p style='text-align: center; color: #495057; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;'>
+                        Get personalized wine recommendations based on your preferences
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+
+            # Add your existing wine recommendation logic here
+            st.write("Select your wine preferences:")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                price_range = st.slider("Price Range ($)", 0, 500, (20, 100), key="recommender_price")
+                wine_type = st.multiselect("Wine Type", ["Red", "White", "Rosé", "Sparkling"], key="recommender_wine_type")
+            
+            with col2:
+                rating_min = st.slider("Minimum Rating", 80, 100, 85, key="recommender_rating")
+                country = st.multiselect("Country", df_wine_combi['country'].unique().tolist(), key="recommender_country")
+
+            if st.button("Get Recommendations"):
+                st.write("Based on your preferences, here are our recommendations:")
+                # Add your recommendation display logic here
+
+        # Wine Catalog Section
+        with tab6:
+            st.markdown("""
+                <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                    <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Wine Catalog</h1>
+                </div>
+            """, unsafe_allow_html=True)
+
+            # Add search and filter options
+            search = st.text_input("Search wines by name, variety, or winery")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                price_filter = st.slider("Price Range ($)", 0, 500, (0, 500), key="catalog_price")
+            with col2:
+                variety_filter = st.multiselect("Variety", df_wine_combi['variety'].unique().tolist(), key="catalog_variety")
+            with col3:
+                country_filter = st.multiselect("Country", df_wine_combi['country'].unique().tolist(), key="catalog_country")
+
+            # Display wine catalog
+            filtered_wines = df_wine_combi  # Add your filtering logic here
+            st.write(f"Showing {len(filtered_wines)} wines")
+            
+            # Display wines in a grid
+            for i in range(0, len(filtered_wines), 3):
+                cols = st.columns(3)
+                for j in range(3):
+                    if i + j < len(filtered_wines):
+                        with cols[j]:
+                            wine = filtered_wines.iloc[i + j]
+                            st.markdown(f"""
+                                <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                                    <h3 style='color: #2C1810;'>{wine['title']}</h3>
+                                    <p style='color: #B4A169; font-weight: 600;'>${wine['price']}</p>
+                                    <p style='color: #495057;'>{wine['variety']} • {wine['country']}</p>
+                                    <p style='color: #495057;'>{wine['points']} points</p>
+                                </div>
+                            """, unsafe_allow_html=True)
+
+        # Shopping Cart Section
+        with tab7:
+            st.markdown("""
+                <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                    <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Shopping Cart</h1>
+                </div>
+            """, unsafe_allow_html=True)
+
+            if not st.session_state.user_logged_in:
+                st.warning("Please create an account or log in to access the shopping cart")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("### Create Account")
+                    new_username = st.text_input("Username", key="new_username")
+                    new_password = st.text_input("Password", type="password", key="new_password")
+                    new_email = st.text_input("Email", key="new_email")
+                    new_name = st.text_input("Full Name", key="new_name")
+                    
+                    if st.button("Create Account"):
+                        success, message = create_user_account(new_username, new_password, new_email, new_name)
+                        if success:
+                            st.session_state.user_logged_in = True
+                            st.session_state.current_user = new_username
+                            st.success(message)
+                        else:
+                            st.error(message)
+            
+            elif st.session_state.account_creation_step == 1:
+                st.markdown("### Step 1: Select Your Preferred Wine Types")
+                wine_types = st.multiselect(
+                    "Choose your favorite wine types",
+                    ["Red", "White", "Rosé", "Sparkling"],
+                    key="setup_wine_types"
+                )
+                
+                if st.button("Next", key="next_step1"):
+                    if wine_types:
+                        st.session_state.account_creation_step = 2
+                    else:
+                        st.warning("Please select at least one wine type")
+            
+            elif st.session_state.account_creation_step == 2:
+                st.markdown("### Step 2: Select Your Preferred Wine Traits")
+                traits = st.multiselect(
+                    "Choose your preferred wine traits",
+                    all_traits,
+                    key="setup_traits"
+                )
+                
+                if st.button("Complete Setup", key="complete_setup"):
+                    if traits:
+                        success, message = update_user_preferences(
+                            st.session_state.current_user,
+                            st.session_state.pref_wine_types,
+                            traits
+                        )
+                        if success:
+                            st.session_state.account_creation_step = 3
+                            st.success("Preferences saved successfully!")
+                        else:
+                            st.error(message)
+                    else:
+                        st.warning("Please select at least one trait")
+            
+            elif st.session_state.account_creation_step == 3:
+                st.success("Account setup complete! You can now start shopping.")
+                if st.button("Start Shopping", key="start_shopping"):
+                    st.session_state.account_creation_step = 4
+            
+            else:
+                if not st.session_state.cart:
+                    st.info("Your cart is empty")
+                else:
+                    for item in st.session_state.cart:
+                        st.markdown(f"""
+                            <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;'>
+                                <h3 style='color: #2C1810;'>{item['title']}</h3>
+                                <p style='color: #B4A169; font-weight: 600;'>${item['price']}</p>
+                                <p style='color: #495057;'>{item['variety']} • {item['country']}</p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                        
+                    st.markdown(f"""
+                        <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                            <h2 style='color: #2C1810;'>Total: ${st.session_state.cart_total:.2f}</h2>
+                        </div>
+                    """, unsafe_allow_html=True)
+                        
+                    if st.button("Proceed to Checkout"):
+                        st.success("Thank you for your order!")
+                        st.session_state.cart = []
+                        st.session_state.cart_total = 0.0
+
+        # Admin Dashboard Section
+        with tab8:
+            st.markdown("""
+                <div style='padding: 2rem; background-color: rgba(255, 255, 255, 0.9); border-radius: 10px;'>
+                    <h1 style='text-align: center; color: #722F37; margin-bottom: 2rem;'>Admin Dashboard</h1>
+                </div>
+            """, unsafe_allow_html=True)
+
+            if not st.session_state.is_admin:
+                username = st.text_input("Username")
+                password = st.text_input("Password", type="password")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("Login"):
+                        if check_login(username, password):
+                            st.session_state.is_admin = True
+                            st.success("Successfully logged in!")
+                        else:
+                            st.error("Invalid credentials")
+                
+                with col2:
+                    if st.button("Create Admin Account"):
+                        if username and password:
+                            success, message = create_admin_account(username, password)
+                            if success:
+                                st.success(message)
+                            else:
+                                st.error(message)
+                        else:
+                            st.error("Please enter both username and password")
+            
+            else:
+                # Display admin dashboard content
+                st.markdown("""
+                    <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                        <h2 style='color: #2C1810;'>Recent Orders</h2>
+                    </div>
+                """, unsafe_allow_html=True)
+
+                # Display orders if any
+                if st.session_state.orders:
+                    for order in st.session_state.orders:
+                        st.markdown(f"""
+                            <div style='padding: 1rem; background-color: white; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;'>
+                                <h3 style='color: #2C1810;'>Order #{order['order_id']}</h3>
+                                <p style='color: #495057;'>Customer: {order['customer']}</p>
+                                <p style='color: #495057;'>Amount: ${order['amount']:.2f}</p>
+                                <p style='color: #495057;'>Status: {order['status']}</p>
+                                <p style='color: #495057;'>Date: {order['date']}</p>
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.info("No orders yet")
+
+                if st.button("Logout"):
+                    st.session_state.is_admin = False
+                    st.success("Successfully logged out!")
+
+    except Exception as e:
+        st.error(f"Error in main application: {e}")
+        st.info("Please refresh the page to try again.")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        st.error(f"Fatal error: {e}")
+        st.info("Please restart the application.")
