@@ -76,431 +76,1040 @@ all_traits = ['almond', 'anise', 'apple', 'apricot', 'baked', 'baking_spices', '
 def set_custom_theme():
     st.markdown("""
         <style>
-        /* Main theme colors */
+        /* Theme Variables */
         :root {
-            --background-color: #FFFFFF;
-            --navy: #1B2B4B;
-            --navy-dark: #0F1C33;
-            --blush: #E8C7C3;
-            --blush-light: #F5E6E4;
-            --gold: #B4A169;
-            --text-color: #1B2B4B;
-            --gray-100: #F8F9FA;
-            --gray-200: #E9ECEF;
-            --gray-300: #DEE2E6;
-            --gray-400: #CED4DA;
-            --gray-500: #ADB5BD;
-            --success: #28A745;
-            --warning: #FFC107;
-            --danger: #DC3545;
+            --primary-bg: #ffffff;
+            --secondary-bg: #f8f9fa;
+            --accent-burgundy: #722F37;
+            --accent-gold: #B4A169;
+            --text-dark: #2C1810;
+            --text-gray: #495057;
+            --border-light: #dee2e6;
         }
-        
-        /* Global styles */
-        .stApp {
-            background-color: var(--background-color);
-            color: var(--text-color);
-            font-family: 'Cormorant Garamond', serif;
-        }
-        
-        /* Headers */
-        h1, h2, h3 {
-            color: var(--navy);
-            font-family: 'Cormorant Garamond', serif;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            margin-bottom: 1.5rem;
-        }
-        
-        /* Metrics styling */
-        [data-testid="stMetricValue"] {
-            color: var(--navy);
-            font-size: 2rem;
-            font-family: 'Cormorant Garamond', serif;
-            font-weight: 600;
-        }
-        
-        [data-testid="stMetricDelta"] {
-            color: var(--success);
+
+        /* Form Labels and Text */
+        .stTextInput label, 
+        .stNumberInput label, 
+        .stTextArea label, 
+        .stSelectbox label,
+        .stDateInput label,
+        div[data-baseweb="select"] label {
+            color: var(--text-dark) !important;
+            font-family: 'Playfair Display', serif;
             font-size: 1rem;
-        }
-        
-        [data-testid="stMetricLabel"] {
-            color: var(--text-color);
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        /* Cards styling */
-        .wine-card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin: 1rem 0;
-            box-shadow: 0 2px 4px rgba(27, 43, 75, 0.05);
-            transition: all 0.3s ease;
-            border: 1px solid var(--blush-light);
-        }
-        
-        .wine-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(27, 43, 75, 0.1);
-            border-color: var(--blush);
-        }
-        
-        /* Dashboard cards */
-        .dashboard-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            margin-bottom: 1rem;
-        }
-        
-        /* Sidebar styling */
-        [data-testid="stSidebar"] {
-            background-color: white;
-            border-right: 1px solid var(--gray-200);
-            padding-top: 2rem;
-        }
-
-        /* Navigation menu styling */
-        [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-            background-color: transparent !important;
-        }
-
-        [data-testid="stSidebar"] .st-bk {
-            background-color: transparent !important;
-        }
-
-        /* Radio buttons in sidebar */
-        [data-testid="stSidebar"] .st-cc {
-            color: var(--navy) !important;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.1rem;
             font-weight: 500;
         }
 
-        /* Style all text in sidebar */
-        [data-testid="stSidebar"] div {
-            color: var(--navy) !important;
+        /* Input field text */
+        .stTextInput input,
+        .stNumberInput input,
+        .stTextArea textarea,
+        .stSelectbox select,
+        .stDateInput input {
+            color: var(--text-dark) !important;
+            background-color: white !important;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 0.75rem;
+            font-family: 'Playfair Display', serif;
         }
 
-        /* Radio button labels */
-        [data-testid="stSidebar"] [role="radiogroup"] {
-            color: var(--navy) !important;
+        /* Expander styling */
+        .streamlit-expanderHeader {
+            color: var(--text-dark) !important;
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-light);
         }
 
-        [data-testid="stSidebar"] [role="radiogroup"] label {
-            color: var(--navy) !important;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.1rem;
-            padding: 0.5rem 0;
+        /* Data editor styling */
+        .stDataFrame {
+            color: var(--text-dark);
         }
 
-        /* Radio button text */
-        [data-testid="stSidebar"] [role="radio"] {
-            color: var(--navy) !important;
+        .stDataFrame td {
+            color: var(--text-dark) !important;
         }
 
-        [data-testid="stSidebar"] [role="radio"] div {
-            color: var(--navy) !important;
-        }
-
-        /* Sidebar title */
-        [data-testid="stSidebar"] h1 {
-            color: var(--navy) !important;
-            font-size: 1.5rem;
-            margin-bottom: 2rem;
-            padding: 0 1rem;
-        }
-
-        /* Sidebar buttons */
-        [data-testid="stSidebar"] .stButton button {
-            background-color: var(--navy);
+        .stDataFrame th {
             color: white !important;
-            margin-top: 1rem;
+            background-color: var(--accent-burgundy) !important;
         }
 
-        /* Override any white text in sidebar */
-        [data-testid="stSidebar"] * {
-            color: var(--navy) !important;
+        /* Radio buttons */
+        .stRadio label {
+            color: var(--text-dark) !important;
         }
 
-        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
-            color: var(--navy) !important;
+        /* Markdown text */
+        .stMarkdown {
+            color: var(--text-dark) !important;
         }
-        
-        /* Button styling */
+
+        /* Headers */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-dark) !important;
+        }
+
+        .stMarkdown p {
+            color: var(--text-dark) !important;
+        }
+
+        /* Selectbox text */
+        div[data-baseweb="select"] span {
+            color: var(--text-dark) !important;
+        }
+
+        /* Dropdown options */
+        div[role="listbox"] div[role="option"] {
+            color: var(--text-dark) !important;
+        }
+
+        /* Global Styles */
+        .stApp {
+            background-color: var(--primary-bg);
+            color: var(--text-dark);
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Tabs styling */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+            background-color: var(--secondary-bg);
+            padding: 0.5rem;
+            border-radius: 4px;
+            border-bottom: 2px solid var(--accent-burgundy);
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            background-color: transparent;
+            color: var(--text-gray);
+            border: none;
+            padding: 0.5rem 1rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+        }
+
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {
+            background-color: var(--accent-burgundy);
+            color: white;
+            border-radius: 4px;
+        }
+
+        /* Links */
+        a {
+            color: var(--accent-burgundy);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--accent-gold);
+        }
+
+        /* Buttons */
         .stButton button {
-            background-color: var(--navy);
+            background-color: var(--accent-burgundy);
             color: white;
             border: none;
-            padding: 0.5rem 1.5rem;
             border-radius: 4px;
-            font-family: 'Cormorant Garamond', serif;
+            padding: 0.75rem 1.5rem;
+            font-family: 'Playfair Display', serif;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 500;
+            transition: all 0.2s ease;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        
-        .stButton button:hover {
-            background-color: var(--navy-dark);
-            transform: translateY(-1px);
-        }
-        
-        /* Input fields */
-        .stTextInput input, .stNumberInput input, .stDateInput input {
-            background-color: white;
-            border: 1px solid var(--gray-300);
-            border-radius: 4px;
-            padding: 0.5rem;
-            font-family: 'Cormorant Garamond', serif;
-            transition: all 0.3s ease;
-            color: var(--text-color) !important;
-        }
-        
-        .stTextInput input:focus, .stNumberInput input:focus, .stDateInput input:focus {
-            border-color: var(--navy);
-            box-shadow: 0 0 0 2px rgba(27, 43, 75, 0.1);
+            letter-spacing: 0.05em;
         }
 
-        /* Select box and multiselect styling */
-        .stSelectbox select, .stMultiSelect select {
+        .stButton button:hover {
+            background-color: var(--accent-gold);
+            transform: translateY(-2px);
+        }
+
+        /* Input fields */
+        .stTextInput input:focus,
+        .stNumberInput input:focus,
+        .stTextArea textarea:focus {
+            border-color: var(--accent-burgundy);
+            box-shadow: 0 0 0 2px rgba(114, 47, 55, 0.1);
+        }
+
+        /* Multiselect */
+        div[data-baseweb="select"] {
             background-color: white;
-            color: var(--text-color) !important;
-            border: 1px solid var(--gray-300);
             border-radius: 4px;
         }
 
         div[data-baseweb="select"] > div {
             background-color: white;
-            color: var(--text-color);
+            border: 1px solid var(--border-light);
+            color: var(--text-dark);
         }
 
-        div[data-baseweb="select"] input {
-            color: var(--text-color) !important;
-        }
-
-        div[data-baseweb="select"] > div:hover {
-            border-color: var(--navy);
-        }
-
-        div[data-baseweb="select"] > div[data-focused="true"] {
-            border-color: var(--navy);
-            box-shadow: 0 0 0 2px rgba(27, 43, 75, 0.1);
-        }
-
-        /* Dropdown menu items */
         div[role="listbox"] {
             background-color: white;
+            border: 1px solid var(--border-light);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        div[role="listbox"] div[role="option"] {
-            color: var(--text-color);
+        div[role="option"] {
+            color: var(--text-dark);
+            padding: 0.5rem 1rem;
         }
 
-        div[role="listbox"] div[role="option"]:hover {
-            background-color: var(--blush-light);
+        div[role="option"]:hover {
+            background-color: var(--secondary-bg);
+            color: var(--accent-burgundy);
         }
 
-        /* Selected items in multiselect */
-        div[data-baseweb="tag"] {
-            background-color: var(--navy) !important;
-            color: white !important;
-        }
-
-        div[data-baseweb="tag"] span {
-            color: white !important;
-        }
-        
         /* Tables */
         .dataframe {
             background-color: white;
-            border: 1px solid var(--gray-200);
+            border: 1px solid var(--border-light);
             border-radius: 4px;
-            font-family: 'Cormorant Garamond', serif;
         }
-        
+
         .dataframe th {
-            background-color: var(--blush-light);
-            color: var(--navy);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            background-color: var(--accent-burgundy);
+            color: white;
             padding: 0.75rem 1rem;
+            font-family: 'Playfair Display', serif;
         }
-        
+
         .dataframe td {
+            color: var(--text-dark);
+            border-top: 1px solid var(--border-light);
             padding: 0.75rem 1rem;
-            border-top: 1px solid var(--gray-200);
         }
-        
-        /* Tabs */
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 0;
-            background-color: transparent;
-            border-bottom: 2px solid var(--gray-200);
+
+        /* Wine Cards */
+        .wine-card {
+            background-color: white;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            cursor: pointer;
+            width: 100%;
+            min-width: 400px;
+            max-width: 600px;
+        }
+
+        .wine-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .wine-image-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            overflow: hidden;
+            background-color: #f8f9fa;
+        }
+
+        .wine-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+            display: block;
+        }
+
+        .wine-card:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Remove overlay and view details button */
+        .wine-overlay {
+            display: none;
+        }
+
+        .wine-card-content {
+            padding: 2rem;
+            background: white;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .wine-title {
+            color: #2C1810;
+            font-size: 1.2rem;
+            font-weight: 600;
+            font-family: 'Playfair Display', serif;
+            line-height: 1.4;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .wine-price {
+            color: #B4A169;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .wine-details {
+            color: #495057;
+            font-size: 1rem;
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        /* Adjust the grid layout for better spacing */
+        .stMarkdown {
+            width: 100%;
+        }
+
+        [data-testid="stHorizontalBlock"] {
+            gap: 2rem;
             padding: 0 1rem;
         }
-        
-        .stTabs [data-baseweb="tab"] {
-            background-color: transparent;
-            color: var(--text-color);
+
+        /* Wine Details Page */
+        .wine-traits-detail {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .wine-traits-detail .wine-trait {
+            background-color: #F8F9FA;
+            color: #2C1810;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #E9ECEF;
+        }
+
+        .add-to-cart-btn {
+            background-color: #B4A169;
+            color: white;
             border: none;
-            padding: 1rem 1.5rem;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1rem;
-            font-weight: 600;
+            padding: 16px 32px;
+            border-radius: 30px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            margin-top: 2rem;
+            width: 100%;
         }
-        
-        .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-            color: var(--navy);
-            border-bottom: 2px solid var(--navy);
+
+        .add-to-cart-btn:hover {
+            background-color: #2C1810;
+            transform: translateY(-2px);
+        }
+
+        /* Load More Button */
+        [data-testid="stButton"] button {
             background-color: transparent;
+            color: #2C1810;
+            border: 2px solid #2C1810;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            margin-top: 2rem;
+            transition: all 0.3s ease;
         }
-        
-        /* Charts */
-        [data-testid="stPlotlyChart"] > div {
-            background-color: white;
-            border-radius: 8px;
+
+        [data-testid="stButton"] button:hover {
+            background-color: #2C1810;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Grid Layout */
+        [data-testid="column"] {
             padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            min-width: 350px;
         }
-        
-        /* Expander */
-        .streamlit-expanderHeader {
-            background-color: white;
-            border: 1px solid var(--gray-200);
-            border-radius: 4px;
-            color: var(--navy);
-            font-family: 'Cormorant Garamond', serif;
+
+        /* Masonry-like grid */
+        .wine-grid {
+            column-count: 3;
+            column-gap: 1rem;
+            padding: 1rem;
+        }
+
+        .wine-card-wrapper {
+            break-inside: avoid;
+            margin-bottom: 1rem;
+        }
+
+        /* Metrics */
+        [data-testid="stMetricValue"] {
+            color: var(--accent-burgundy);
+            font-size: 2rem;
             font-weight: 600;
+            font-family: 'Playfair Display', serif;
         }
-        
+
+        [data-testid="stMetricLabel"] {
+            color: var(--text-gray);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Sidebar */
+        [data-testid="stSidebar"] {
+            background-color: var(--secondary-bg);
+            border-right: 1px solid var(--border-light);
+        }
+
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
+            color: var(--text-dark);
+        }
+
         /* Success/Error messages */
-        .stSuccess, .stError {
+        .stSuccess {
+            background-color: #e6f4ea;
+            color: #1e4620;
+            border: 1px solid #b7dfb9;
             padding: 0.75rem 1rem;
             border-radius: 4px;
-            margin: 1rem 0;
-        }
-        
-        .stSuccess {
-            background-color: var(--blush-light);
-            color: var(--navy);
-            border: 1px solid var(--blush);
-        }
-        
-        .stError {
-            background-color: #F8D7DA;
-            color: #721C24;
-            border: 1px solid #F5C6CB;
-        }
-        
-        /* Form styling */
-        [data-testid="stForm"] {
-            background-color: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid var(--gray-200);
         }
 
-        /* Form labels */
-        .stTextInput label, .stNumberInput label, .stTextArea label, .stSelectbox label {
-            color: var(--navy) !important;
-            font-family: 'Cormorant Garamond', serif;
+        .stError {
+            background-color: #fce8e8;
+            color: #c62828;
+            border: 1px solid #f5c2c2;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+        }
+
+        /* Remove background image */
+        [data-testid="stAppViewContainer"] {
+            background-image: none !important;
+        }
+
+        [data-testid="stVerticalBlock"] {
+            background-color: transparent !important;
+        }
+
+        /* Wine Catalog Container */
+        .wine-catalog-container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* View Details Button */
+        .view-details-btn {
+            background-color: white;
+            color: #2C1810;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .view-details-btn:hover {
+            transform: scale(1.05);
+            background-color: #B4A169;
+            color: white;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .wine-catalog-container {
+# Import python lib
+import streamlit as st
+import time
+import pandas as pd
+import numpy as np
+from surprise import Dataset, Reader
+from surprise import KNNBaseline
+from PIL import Image
+import os
+import hashlib
+import json
+import plotly.express as px
+import plotly.figure_factory as ff
+
+# Import wine dataframes
+df_wine_model = pd.read_pickle('data/df_wine_us_rate.pkl')
+df_wine_combi = pd.read_pickle('data/df_wine_combi.pkl')
+
+# Load wine images
+wine_images = {
+    'red': 'images/red-wine.jpg',
+    'white': 'images/white-wine.jpg',
+    'rose': 'images/rose-wine.jpg',
+    'sparkling': 'images/sparkling-wine.jpg'
+}
+
+# Admin credentials file
+ADMIN_FILE = 'admin_credentials.json'
+
+def load_admin_credentials():
+    if os.path.exists(ADMIN_FILE):
+        with open(ADMIN_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_admin_credentials(credentials):
+    with open(ADMIN_FILE, 'w') as f:
+        json.dump(credentials, f)
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def check_login(username, password):
+    credentials = load_admin_credentials()
+    hashed_password = hash_password(password)
+    return username in credentials and credentials[username] == hashed_password
+
+def create_admin_account(username, password):
+    credentials = load_admin_credentials()
+    if username in credentials:
+        return False, "Username already exists"
+    
+    credentials[username] = hash_password(password)
+    save_admin_credentials(credentials)
+    return True, "Admin account created successfully"
+
+# Initialize session state
+if 'is_admin' not in st.session_state:
+    st.session_state.is_admin = False
+if 'wines_displayed' not in st.session_state:
+    st.session_state.wines_displayed = 10
+
+# Instantiate the list of wine traits
+all_traits = ['almond', 'anise', 'apple', 'apricot', 'baked', 'baking_spices', 'berry', 'black_cherry', 'black_currant', 'black_pepper', 'black_tea', 'blackberry', 'blueberry', 
+              'boysenberry', 'bramble', 'bright', 'butter', 'candy', 'caramel', 'cardamom', 'cassis', 'cedar', 'chalk', 'cherry', 'chocolate', 'cinnamon', 'citrus', 'clean', 'closed',
+              'clove', 'cocoa', 'coffee', 'cola', 'complex', 'concentrated', 'cranberry', 'cream', 'crisp', 'dark', 'dark_chocolate', 'dense', 'depth', 'dried_herb', 'dry', 'dust',
+              'earth', 'edgy', 'elderberry', 'elegant', 'fennel', 'firm', 'flower', 'forest_floor', 'french_oak', 'fresh', 'fruit', 'full_bodied', 'game', 'grapefruit', 'graphite',
+              'green', 'gripping', 'grippy', 'hearty', 'herb', 'honey', 'honeysuckle', 'jam', 'juicy', 'lavender', 'leafy', 'lean', 'leather', 'lemon', 'lemon_peel', 'length', 'licorice',
+              'light_bodied', 'lime', 'lush', 'meaty', 'medium_bodied', 'melon', 'milk_chocolate', 'minerality', 'mint', 'nutmeg', 'oak', 'olive', 'orange', 'orange_peel', 'peach',
+              'pear', 'pencil_lead', 'pepper', 'pine', 'pineapple', 'plum', 'plush', 'polished', 'pomegranate', 'powerful', 'purple', 'purple_flower', 'raspberry', 'refreshing',
+              'restrained', 'rich', 'ripe', 'robust', 'rose', 'round', 'sage', 'salt', 'savory', 'sharp', 'silky', 'smoke', 'smoked_meat', 'smooth', 'soft', 'sparkling', 'spice',
+              'steel', 'stone', 'strawberry', 'succulent', 'supple', 'sweet', 'tangy', 'tannin', 'tar', 'tart', 'tea', 'thick', 'thyme', 'tight', 'toast', 'tobacco', 'tropical_fruit',
+              'vanilla', 'velvety', 'vibrant', 'violet', 'warm', 'weight', 'wet_rocks', 'white', 'white_pepper', 'wood']
+
+# Add custom theme and styling at the beginning of the app
+def set_custom_theme():
+    st.markdown("""
+        <style>
+        /* Theme Variables */
+        :root {
+            --primary-bg: #ffffff;
+            --secondary-bg: #f8f9fa;
+            --accent-burgundy: #722F37;
+            --accent-gold: #B4A169;
+            --text-dark: #2C1810;
+            --text-gray: #495057;
+            --border-light: #dee2e6;
+        }
+
+        /* Form Labels and Text */
+        .stTextInput label, 
+        .stNumberInput label, 
+        .stTextArea label, 
+        .stSelectbox label,
+        .stDateInput label,
+        div[data-baseweb="select"] label {
+            color: var(--text-dark) !important;
+            font-family: 'Playfair Display', serif;
             font-size: 1rem;
             font-weight: 500;
-            margin-bottom: 0.5rem;
         }
 
-        /* Form inputs */
-        .stTextInput input, .stNumberInput input, .stTextArea textarea {
+        /* Input field text */
+        .stTextInput input,
+        .stNumberInput input,
+        .stTextArea textarea,
+        .stSelectbox select,
+        .stDateInput input {
+            color: var(--text-dark) !important;
             background-color: white !important;
-            border: 1px solid var(--gray-300) !important;
-            border-radius: 4px !important;
-            padding: 0.5rem !important;
-            font-family: 'Cormorant Garamond', serif !important;
-            color: var(--navy) !important;
-            font-size: 1rem !important;
-        }
-
-        /* Input focus state */
-        .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
-            border-color: var(--navy) !important;
-            box-shadow: 0 0 0 2px rgba(27, 43, 75, 0.1) !important;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 0.75rem;
+            font-family: 'Playfair Display', serif;
         }
 
         /* Expander styling */
         .streamlit-expanderHeader {
-            background-color: var(--blush-light) !important;
-            color: var(--navy) !important;
-            font-family: 'Cormorant Garamond', serif !important;
-            font-weight: 600 !important;
-            padding: 1rem !important;
-            border: none !important;
-            border-radius: 4px !important;
-        }
-
-        .streamlit-expanderContent {
-            background-color: white !important;
-            border: 1px solid var(--gray-200) !important;
-            border-radius: 0 0 4px 4px !important;
-            padding: 1.5rem !important;
+            color: var(--text-dark) !important;
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-light);
         }
 
         /* Data editor styling */
         .stDataFrame {
-            background-color: white !important;
+            color: var(--text-dark);
         }
 
         .stDataFrame td {
-            color: var(--navy) !important;
-            font-family: 'Cormorant Garamond', serif !important;
+            color: var(--text-dark) !important;
         }
 
         .stDataFrame th {
-            background-color: var(--blush-light) !important;
-            color: var(--navy) !important;
-            font-family: 'Cormorant Garamond', serif !important;
-            font-weight: 600 !important;
+            color: white !important;
+            background-color: var(--accent-burgundy) !important;
         }
 
-        /* Headers in sections */
-        [data-testid="stHeader"] {
-            color: var(--navy) !important;
+        /* Radio buttons */
+        .stRadio label {
+            color: var(--text-dark) !important;
         }
 
-        .main h1, .main h2, .main h3, .main .stMarkdown {
-            color: var(--navy) !important;
+        /* Markdown text */
+        .stMarkdown {
+            color: var(--text-dark) !important;
         }
 
-        /* Subheader styling */
-        .stSubheader {
-            color: var(--navy) !important;
-            font-family: 'Cormorant Garamond', serif !important;
-            font-size: 1.25rem !important;
-            font-weight: 600 !important;
-            margin-bottom: 1rem !important;
+        /* Headers */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-dark) !important;
+        }
+
+        .stMarkdown p {
+            color: var(--text-dark) !important;
+        }
+
+        /* Selectbox text */
+        div[data-baseweb="select"] span {
+            color: var(--text-dark) !important;
+        }
+
+        /* Dropdown options */
+        div[role="listbox"] div[role="option"] {
+            color: var(--text-dark) !important;
+        }
+
+        /* Global Styles */
+        .stApp {
+            background-color: var(--primary-bg);
+            color: var(--text-dark);
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Tabs styling */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+            background-color: var(--secondary-bg);
+            padding: 0.5rem;
+            border-radius: 4px;
+            border-bottom: 2px solid var(--accent-burgundy);
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            background-color: transparent;
+            color: var(--text-gray);
+            border: none;
+            padding: 0.5rem 1rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+        }
+
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {
+            background-color: var(--accent-burgundy);
+            color: white;
+            border-radius: 4px;
+        }
+
+        /* Links */
+        a {
+            color: var(--accent-burgundy);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--accent-gold);
+        }
+
+        /* Buttons */
+        .stButton button {
+            background-color: var(--accent-burgundy);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.75rem 1.5rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stButton button:hover {
+            background-color: var(--accent-gold);
+            transform: translateY(-2px);
+        }
+
+        /* Input fields */
+        .stTextInput input:focus,
+        .stNumberInput input:focus,
+        .stTextArea textarea:focus {
+            border-color: var(--accent-burgundy);
+            box-shadow: 0 0 0 2px rgba(114, 47, 55, 0.1);
+        }
+
+        /* Multiselect */
+        div[data-baseweb="select"] {
+            background-color: white;
+            border-radius: 4px;
+        }
+
+        div[data-baseweb="select"] > div {
+            background-color: white;
+            border: 1px solid var(--border-light);
+            color: var(--text-dark);
+        }
+
+        div[role="listbox"] {
+            background-color: white;
+            border: 1px solid var(--border-light);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        div[role="option"] {
+            color: var(--text-dark);
+            padding: 0.5rem 1rem;
+        }
+
+        div[role="option"]:hover {
+            background-color: var(--secondary-bg);
+            color: var(--accent-burgundy);
+        }
+
+        /* Tables */
+        .dataframe {
+            background-color: white;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+        }
+
+        .dataframe th {
+            background-color: var(--accent-burgundy);
+            color: white;
+            padding: 0.75rem 1rem;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .dataframe td {
+            color: var(--text-dark);
+            border-top: 1px solid var(--border-light);
+            padding: 0.75rem 1rem;
+        }
+
+        /* Wine Cards */
+        .wine-card {
+            background-color: white;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            cursor: pointer;
+            width: 100%;
+            min-width: 300px;
+        }
+
+        .wine-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .wine-image-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            overflow: hidden;
+            background-color: #f8f9fa;
+        }
+
+        .wine-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+            display: block;
+        }
+
+        .wine-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .wine-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(44, 24, 16, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .wine-card:hover .wine-overlay {
+            opacity: 1;
+        }
+
+        .wine-card-content {
+            padding: 1.5rem;
+            background: white;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .wine-title {
+            color: #2C1810;
+            font-size: 1.2rem;
+            font-weight: 600;
+            font-family: 'Playfair Display', serif;
+            line-height: 1.4;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .wine-price {
+            color: #B4A169;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .wine-details {
+            color: #495057;
+            font-size: 1rem;
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        /* Adjust the grid layout for better spacing */
+        .stMarkdown {
+            width: 100%;
+        }
+
+        [data-testid="stHorizontalBlock"] {
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+
+        /* Wine Details Page */
+        .wine-traits-detail {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .wine-traits-detail .wine-trait {
+            background-color: #F8F9FA;
+            color: #2C1810;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #E9ECEF;
+        }
+
+        .add-to-cart-btn {
+            background-color: #B4A169;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 30px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2rem;
+            width: 100%;
+        }
+
+        .add-to-cart-btn:hover {
+            background-color: #2C1810;
+            transform: translateY(-2px);
+        }
+
+        /* Load More Button */
+        [data-testid="stButton"] button {
+            background-color: transparent;
+            color: #2C1810;
+            border: 2px solid #2C1810;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            margin-top: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        [data-testid="stButton"] button:hover {
+            background-color: #2C1810;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Grid Layout */
+        [data-testid="column"] {
+            padding: 1rem;
+            min-width: 350px;
+        }
+
+        /* Masonry-like grid */
+        .wine-grid {
+            column-count: 3;
+            column-gap: 1rem;
+            padding: 1rem;
+        }
+
+        .wine-card-wrapper {
+            break-inside: avoid;
+            margin-bottom: 1rem;
+        }
+
+        /* Metrics */
+        [data-testid="stMetricValue"] {
+            color: var(--accent-burgundy);
+            font-size: 2rem;
+            font-weight: 600;
+            font-family: 'Playfair Display', serif;
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: var(--text-gray);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Sidebar */
+        [data-testid="stSidebar"] {
+            background-color: var(--secondary-bg);
+            border-right: 1px solid var(--border-light);
+        }
+
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
+            color: var(--text-dark);
         }
 
         /* Success/Error messages */
-        .stSuccess, .stError {
+        .stSuccess {
+            background-color: #e6f4ea;
+            color: #1e4620;
+            border: 1px solid #b7dfb9;
             padding: 0.75rem 1rem;
             border-radius: 4px;
-            margin: 1rem 0;
-            color: var(--navy) !important;
         }
-        
+
+        .stError {
+            background-color: #fce8e8;
+            color: #c62828;
+            border: 1px solid #f5c2c2;
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+        }
+
+        /* Remove background image */
+        [data-testid="stAppViewContainer"] {
+            background-image: none !important;
+        }
+
+        [data-testid="stVerticalBlock"] {
+            background-color: transparent !important;
+        }
+
+        /* Wine Catalog Container */
+        .wine-catalog-container {
+            padding: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* View Details Button */
+        .view-details-btn {
+            background-color: white;
+            color: #2C1810;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .view-details-btn:hover {
+            transform: scale(1.05);
+            background-color: #B4A169;
+            color: white;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .wine-catalog-container {
+                max-width: 1000px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .wine-card {
+                min-width: 280px;
+            }
+            
+            .wine-image-container {
+                height: 250px;
+            }
+            
+            .wine-title {
+                font-size: 1.1rem;
+            }
+            
+            .wine-price {
+                font-size: 1.2rem;
+            }
+        }
         </style>
-        
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
     """, unsafe_allow_html=True)
 
 # Call the theme function at the start
@@ -998,34 +1607,109 @@ with tab2:
         ]
     
     # Get the wines to display
-    catalog_display = catalog_df[['title', 'variety', 'winery', 'country', 'province', 'points', 'price', 'description']].head(st.session_state.wines_displayed)
+    catalog_display = catalog_df[['title', 'variety', 'winery', 'country', 'province', 'points', 'price', 'description', 'traits']].head(st.session_state.wines_displayed)
     
-    # Create columns for the grid layout
-    cols = st.columns(3)
+    # Initialize session states
+    if 'view_wine_details' not in st.session_state:
+        st.session_state.view_wine_details = False
+    if 'selected_wine' not in st.session_state:
+        st.session_state.selected_wine = None
     
-    # Display wines in a grid
-    for idx, row in catalog_display.iterrows():
-        # Determine which image to use based on index
-        image_type = ['red', 'white', 'rose', 'sparkling'][idx % 4]
-        
-        # Create a card for each wine
-        with cols[idx % 3]:
-            st.markdown('<div class="wine-card">', unsafe_allow_html=True)
-            st.image(wine_images[image_type], use_container_width=True)
-            st.markdown(f"""
-                <div class="wine-title">{row['title']}</div>
-                <div class="wine-details">Variety: {row['variety']}</div>
-                <div class="wine-details">Winery: {row['winery']}</div>
-                <div class="wine-details">Country: {row['country']}</div>
-                <div class="wine-details">Province: {row['province']}</div>
-                <div class="wine-details">Rating: {row['points']}/100</div>
-                <div class="wine-price">${row['price']:,.2f}</div>
-                <div class="wine-details">{row['description'][:100]}...</div>
-                </div>
-            """, unsafe_allow_html=True)
-    
-    # Load More button
-    if st.session_state.wines_displayed < len(catalog_df):
-        if st.button("Load More Wines"):
-            st.session_state.wines_displayed += 10
+    # Show either the catalog or the wine details
+    if st.session_state.view_wine_details and st.session_state.selected_wine is not None:
+        # Back button
+        if st.button("← Back to Catalog"):
+            st.session_state.view_wine_details = False
+            st.session_state.selected_wine = None
             st.rerun()
+        
+        # Wine Details Page
+        wine = st.session_state.selected_wine
+        
+        # Determine which image to use
+        if 'sparkling' in wine['variety'].lower():
+            image_type = 'sparkling'
+        elif 'rosé' in wine['variety'].lower() or 'rose' in wine['variety'].lower():
+            image_type = 'rose'
+        elif 'red' in wine['variety'].lower() or 'blend' in wine['variety'].lower():
+            image_type = 'red'
+        else:
+            image_type = 'white'
+        
+        # Create two columns for the details page
+        col1, col2 = st.columns([3, 2])
+        
+        with col1:
+            st.image(wine_images[image_type], width=400)
+            st.markdown(f"<h1 style='font-family: Playfair Display; color: #2C1810;'>{wine['title']}</h1>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='font-family: Playfair Display; color: #B4A169; font-size: 24px;'>${wine['price']:,.2f}</h2>", unsafe_allow_html=True)
+            st.markdown("### Description")
+            st.write(wine['description'])
+        
+        with col2:
+            st.markdown("### Wine Details")
+            st.markdown(f"**Variety:** {wine['variety']}")
+            st.markdown(f"**Winery:** {wine['winery']}")
+            st.markdown(f"**Region:** {wine['province']}, {wine['country']}")
+            st.markdown(f"**Rating:** {wine['points']}/100")
+            
+            st.markdown("### Characteristics")
+            traits_list = wine['traits'].split() if isinstance(wine['traits'], str) else []
+            traits_html = ''.join([f'<span class="wine-trait">{trait.replace("_", " ").title()}</span>' for trait in traits_list])
+            st.markdown(f'<div class="wine-traits-detail">{traits_html}</div>', unsafe_allow_html=True)
+            
+            # Add to Cart button (placeholder)
+            st.markdown('<button class="add-to-cart-btn">Add to Cart</button>', unsafe_allow_html=True)
+    
+    else:
+        # Create a container for better layout control
+        st.markdown('<div class="wine-catalog-container">', unsafe_allow_html=True)
+        
+        # Display wine catalog grid
+        cols = st.columns(3)
+        
+        for idx, row in catalog_display.iterrows():
+            # Determine which image to use based on variety
+            if 'sparkling' in row['variety'].lower():
+                image_type = 'sparkling'
+            elif 'rosé' in row['variety'].lower() or 'rose' in row['variety'].lower():
+                image_type = 'rose'
+            elif 'red' in row['variety'].lower() or 'blend' in row['variety'].lower():
+                image_type = 'red'
+            else:
+                image_type = 'white'
+            
+            # Create a card for each wine
+            with cols[idx % 3]:
+                st.markdown(f'''
+                    <div class="wine-card">
+                        <div class="wine-image-container">
+                            <img src="{wine_images[image_type]}" alt="{row['title']}" loading="lazy">
+                            <div class="wine-overlay">
+                                <button class="view-details-btn">View Details</button>
+                            </div>
+                        </div>
+                        <div class="wine-card-content">
+                            <div class="wine-price">${row['price']:,.2f}</div>
+                            <div class="wine-title">{row['title']}</div>
+                            <div class="wine-details">{row['variety']}</div>
+                            <div class="wine-details">Rating: {row['points']}/100</div>
+                        </div>
+                    </div>
+                ''', unsafe_allow_html=True)
+                
+                # Hidden button for handling click events
+                if st.button("View Details", key=f"view_details_{idx}", type="secondary"):
+                    st.session_state.selected_wine = row
+                    st.session_state.view_wine_details = True
+                    st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Load More button
+        if st.session_state.wines_displayed < len(catalog_df):
+            st.markdown('<div style="text-align: center; padding: 2rem;">', unsafe_allow_html=True)
+            if st.button("Load More Wines"):
+                st.session_state.wines_displayed += 10
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
